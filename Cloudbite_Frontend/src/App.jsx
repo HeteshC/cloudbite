@@ -6,6 +6,8 @@ import Cart from './pages/Cart/Cart'
 import PlaceOrder from './pages/PlaceOrder/PlaceOrder'
 import Footer from './components/Footer/Footer'
 import Login from './components/Login/login'
+import ContactUs from "./pages/ContactUs/ContactUs"
+import ExploreKitchen from './pages/cloud_kitchens/ExploreKitchen'
 
 const App = () => {
 
@@ -18,9 +20,10 @@ const App = () => {
         <Navbar setShowLogin={setShowLogin}/>
         <Routes>
           <Route path='/' element={<Home />} />
+          <Route path='/cloud-kitchens' element={<ExploreKitchen />} />
           <Route path='/cart' element={<Cart />} />
           <Route path='/order' element={<PlaceOrder />} />
-
+          <Route path="/contact-us" element={<ContactUs />} />
         </Routes>
       </div>
       <Footer />

@@ -1,8 +1,9 @@
 .header{
-    height: 34vw;
+    height: 42vw;
     margin: 30px auto;
-    background: url('/header_img.png') no-repeat;
-    background-size: contain;
+    background: url('/src/assets/header_img.png') no-repeat;
+    background-size: cover;
+    border-radius: 15px;
     position: relative;
 }
 .header-contents{
@@ -12,18 +13,18 @@
     align-items: start;
     gap: 1.5vw;
     max-width: 50%;
-    bottom: 10%;
+    bottom: 20%;
     left: 6vw;   
     animation: fadeIn 3s;
 }
 .header-contents h2{
     font-weight: 500;
-    color: white;
+    color:whitesmoke;
     font-size: max(4.5vw,22px);
 }
 .header-contents p{
-    color: white;
-    font-size: 1vw;
+    color: whitesmoke;
+    font-size: 1.2vi;
 }
 .header-contents button{
     border: none;

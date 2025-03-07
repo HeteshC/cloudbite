@@ -15,7 +15,7 @@ a{
   color: inherit;  
 }
 .app{
-  width: 80%;
+  width: 90%;
   margin: auto;
 }
 @keyframes fadeIn {
@@ -26,3 +26,7 @@ a{
       opacity: 1;
   }
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

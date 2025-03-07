@@ -1,30 +1,65 @@
-import React, { useState } from 'react'
-import './Navbar.css'
-import { assets } from '../../assets/assets'
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "./Navbar.css";
+import { assets } from "../../assets/assets";
 
-const Navbar = (setShowLogin) => {
+const Navbar = ({ setShowLogin }) => {
+  const [menu, setMenu] = useState("menu");
+  const navigate = useNavigate(); // React Router navigation hook
 
-    const [menu,setMenu] = useState("vendors");
+  const handleNavigation = (page, route) => {
+    setMenu(page);
+    navigate(route);
+  };
 
   return (
-    <div className='navbar'>
-      <img src={assets.logo} alt="" className='logo'/>
-      <ul className="navbar-menu">
-         <li onClick={()=>setMenu("home")} className={menu==="home"?"active":""}>home</li>
-         <li onClick={()=>setMenu("menu")} className={menu==="menu"?"active":""}>menu</li>
-         <li onClick={()=>setMenu("vendors")} className={menu==="vendors"?"active":""}>vendors</li>
-         <li onClick={()=>setMenu("contact us")} className={menu==="contact us"?"active":""}>contact us</li>
-      </ul>
-      <div className="navbar-right">
-        <img src={assets.search_icon} alt="" />
-        <div className="navbar-search-icon">
-            <img src={assets.basket_icon} alt="" />
-            <div className="dot"></div>
-        </div>
-        <button onClick={()=>setShowLogin(true)}>sign in</button>
-      </div>
-    </div>
-  )
-}
+    <div className="navbar">
+      <img src={assets.logo} alt="logo" className="logo" />
 
-export default Navbar
+      <ul className="navbar-menu">
+        <li
+          onClick={() => handleNavigation("home", "/")}
+          className={menu === "home" ? "active" : ""}
+        >
+          Home
+        </li>
+        <li
+          onClick={() => handleNavigation("cloud kitchens", "/cloud-kitchens")}
+          className={menu === "cloud kitchens" ? "active" : ""}
+        >
+          Cloud Kitchens
+        </li>
+        <li
+          onClick={() => handleNavigation("menu", "/menu")}
+          className={menu === "menu" ? "active" : ""}
+        >
+          Menu
+        </li>
+        <li
+          onClick={() => handleNavigation("contact us", "/contact-us")}
+          className={menu === "contact us" ? "active" : ""}
+        >
+          Contact Us
+        </li>
+        <li
+          onClick={() => handleNavigation("profile", "/profile")}
+          className={menu === "profile" ? "active" : ""}
+        >
+          Profile
+        </li>
+      </ul>
+
+      <div className="navbar-right">
+        <img src={assets.search_icon} alt="search" />
+        <div className="navbar-search-icon">
+          <img src={assets.basket_icon} alt="basket" />
+          <div className="dot"></div>
+        </div>
+        <button onClick={() => setShowLogin(true)}>Sign In</button>
+      </div>
+      <hr />
+    </div>
+  );
+};
+
+export default Navbar;

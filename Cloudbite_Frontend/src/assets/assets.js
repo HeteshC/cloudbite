@@ -2,6 +2,7 @@ import basket_icon from './basket_icon.png'
 import logo from './logo.png'
 import header_img from './header_img.png'
 import search_icon from './search_icon.png'
+
 import menu_1 from './menu_1.png'
 import menu_2 from './menu_2.png'
 import menu_3 from './menu_3.png'
@@ -10,6 +11,15 @@ import menu_5 from './menu_5.png'
 import menu_6 from './menu_6.png'
 import menu_7 from './menu_7.png'
 import menu_8 from './menu_8.png'
+
+import kitchen_1 from './kitchen_1.png'
+import kitchen_2 from './kitchen_2.png'
+import kitchen_3 from './kitchen_3.png'
+import kitchen_4 from './kitchen_4.png'
+import kitchen_5 from './kitchen_5.png'
+import kitchen_6 from './kitchen_6.png'
+import kitchen_7 from './kitchen_7.png'
+import kitchen_8 from './kitchen_8.png'
 
 import food_1 from './food_1.png'
 import food_2 from './food_2.png'
@@ -115,6 +125,40 @@ export const menu_list = [
         menu_name: "Noodles",
         menu_image: menu_8
     }]
+
+export const kitchen_list = [
+    {
+        kitchen_name: "RebelFoods",
+        kitchen_image: kitchen_1
+    },
+    {
+        kitchen_name: "FreshMenu",
+        kitchen_image: kitchen_2
+    },
+    {
+        kitchen_name: "EatFit",
+        kitchen_image: kitchen_3
+    },
+    {
+        kitchen_name: "Box8",
+        kitchen_image: kitchen_4
+    },
+    {
+        kitchen_name: "SLAYCoffee",
+        kitchen_image: kitchen_5
+    },
+    {
+        kitchen_name: "SweetTruth",
+        kitchen_image: kitchen_6
+    },
+    {
+        kitchen_name: "BohriKitchen",
+        kitchen_image: kitchen_7
+    },
+    {
+        kitchen_name: "HOIFoods",
+        kitchen_image: kitchen_8
+    }]    
 
 export const food_list = [
     {
