@@ -2,12 +2,15 @@ import React, { useState } from 'react'
 import Navbar from './components/Navbar/Navbar'
 import { Route, Routes } from 'react-router-dom'
 import Home from './pages/Home/Home'
+import CloudKitchens from './pages/Cloudkitchens/CloudKitchens'
+import Menu from './pages/Menu/Menu'
 import Cart from './pages/Cart/Cart'
 import PlaceOrder from './pages/PlaceOrder/PlaceOrder'
 import Footer from './components/Footer/Footer'
-import Login from './components/Login/login'
+import Login from './components/Login/Login'
 import ContactUs from "./pages/ContactUs/ContactUs"
-import ExploreKitchen from './pages/cloud_kitchens/ExploreKitchen'
+import ExploreKitchen from './pages/Cloudkitchens/CloudKitchens'
+// import { Menu } from '@headlessui/react'
 
 const App = () => {
 
@@ -20,7 +23,10 @@ const App = () => {
         <Navbar setShowLogin={setShowLogin}/>
         <Routes>
           <Route path='/' element={<Home />} />
-          <Route path='/cloud-kitchens' element={<ExploreKitchen />} />
+          <Route path='/home' element={<Home />} />
+          <Route path='/cloud-kitchens' element={<CloudKitchens/>} />
+          <Route path='/explore-kitchen' element={<ExploreKitchen/>} />
+          <Route path='/menu' element={<Menu />} />
           <Route path='/cart' element={<Cart />} />
           <Route path='/order' element={<PlaceOrder />} />
           <Route path="/contact-us" element={<ContactUs />} />

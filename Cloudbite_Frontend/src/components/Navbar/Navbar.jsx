@@ -4,7 +4,7 @@ import "./Navbar.css";
 import { assets } from "../../assets/assets";
 
 const Navbar = ({ setShowLogin }) => {
-  const [menu, setMenu] = useState("menu");
+  const [menu, setMenu] = useState("  ");
   const navigate = useNavigate(); // React Router navigation hook
 
   const handleNavigation = (page, route) => {
