@@ -3,7 +3,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid rgb(61, 8, 8);
+    border-bottom: 2px solid #e2e2e2;
 }
 .navbar .logo{
     width: 150px;
@@ -11,14 +11,16 @@
 .navbar-menu{
     display: flex;
     list-style: none;
-    gap: 40px;
+    gap: 55px;
     color: rgb(61, 8, 8);
     font-size: 18px;
+    margin-left: 30px;
 }
 .navbar-right{
     display: flex;
     align-items: center;
     gap: 40px;
+    margin-left: 10px;
 }
 .navbar button{
     background-color: transparent;
@@ -44,6 +46,7 @@
 }
 .navbar-search-icon{
     position: relative;
+    margin-left: 10px;
 }
 .navbar-search-icon .dot{
     position: absolute;
@@ -53,4 +56,19 @@
     border-radius: 5px;
     top: -8px;
     right: -8px;
+}
+.sign-in-btn{
+    margin-left: 10px;
+}
+.profile-icon {
+    width: 35px; /* Increased size for better visibility */
+    height: 35px;
+    border-radius: 50%;
+    border: 2px solid rgb(61, 8, 8);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    transition: 0.3s ease;
 }

@@ -36,16 +36,10 @@ const Navbar = ({ setShowLogin }) => {
           Menu
         </li>
         <li
-          onClick={() => handleNavigation("contact us", "/contact-us")}
-          className={menu === "contact us" ? "active" : ""}
+          onClick={() => handleNavigation("contact-us", "/contact-us")}
+          className={menu === "contact-us" ? "active" : ""}
         >
           Contact Us
-        </li>
-        <li
-          onClick={() => handleNavigation("profile", "/profile")}
-          className={menu === "profile" ? "active" : ""}
-        >
-          Profile
         </li>
       </ul>
 
@@ -55,7 +49,13 @@ const Navbar = ({ setShowLogin }) => {
           <img src={assets.basket_icon} alt="basket" />
           <div className="dot"></div>
         </div>
-        <button onClick={() => setShowLogin(true)}>Sign In</button>
+        <button className="sign-in-btn" onClick={() => setShowLogin(true)}>Sign In</button>
+        <img 
+          src={assets.profile_icon} 
+          alt="profile" 
+          className="profile-icon" 
+          onClick={() => handleNavigation("profile", "/profile")}
+        />
       </div>
       <hr />
     </div>

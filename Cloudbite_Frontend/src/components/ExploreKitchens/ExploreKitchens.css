@@ -40,7 +40,7 @@
     margin: 10px 0px;
     height: 2px;
     background-color: #e2e2e2;
-    border: none;
+    border: 1px solid;
 }
 .explore-kitchen-list-item .active{
     border: 3px solid rgb(61, 8, 8);
