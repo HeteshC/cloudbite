@@ -30,8 +30,8 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: [
-        "vendor", // System Administrator
-        "superadmin", // Super Administrator
+        "vendor",
+        "superadmin",
         "admin",
         "user", // Default role, customer
         "employee",
