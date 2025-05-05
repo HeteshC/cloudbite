@@ -11,7 +11,7 @@
 .navbar-menu{
     display: flex;
     list-style: none;
-    gap: 55px;
+    gap: 50px;
     color: rgb(61, 8, 8);
     font-size: 18px;
     margin-left: 30px;
@@ -61,7 +61,7 @@
     margin-left: 10px;
 }
 .profile-icon {
-    width: 35px; /* Increased size for better visibility */
+    width: 35px; 
     height: 35px;
     border-radius: 50%;
     border: 2px solid rgb(61, 8, 8);
@@ -71,4 +71,46 @@
     justify-content: center;
     background-color: transparent;
     transition: 0.3s ease;
+}
+@media (max-width:1050px) {
+    .navbar .logo{
+        width: 140px;
+    }
+    .navbar-menu{
+        gap: 20px;
+        font-size: 17px;
+    }
+    .navbar-right{
+        gap: 30px;
+    }
+    .navbar-right img{
+        width: 22px;
+    }
+    .navbar-right button{
+        padding: 8px 25px;
+    }
+}
+@media (max-width:900px) {
+    .navbar .logo{
+        width: 140px;
+    }
+    .navbar-menu{
+        gap: 15px;
+        font-size: 16px;
+    }
+    .navbar-right{
+        gap: 20px;
+    }
+    .navbar-right img{
+        width: 20px;
+    }
+    .navbar-right button{
+        padding: 7px 20px;
+        font-size: 15px;
+    }
+}
+@media (max-width:750px) {
+    .navbar-menu{
+        display: none;
+    }
 }

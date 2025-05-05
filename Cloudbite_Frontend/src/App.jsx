@@ -7,7 +7,8 @@ import Menu from './pages/Menu/Menu'
 import Cart from './pages/Cart/Cart'
 import PlaceOrder from './pages/PlaceOrder/PlaceOrder'
 import Footer from './components/Footer/Footer'
-import Login from './components/Login/Login'
+import Login from './pages/user_pages/Login'
+import Register from './pages/user_pages/Register'
 import ContactUs from "./pages/ContactUs/ContactUs"
 import ExploreKitchen from './pages/Cloudkitchens/CloudKitchens'
 // import { Menu } from '@headlessui/react'
@@ -24,6 +25,8 @@ const App = () => {
         <Routes>
           <Route path='/' element={<Home />} />
           <Route path='/home' element={<Home />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/register' element={<Register />} />
           <Route path='/cloud-kitchens' element={<CloudKitchens/>} />
           <Route path='/explore-kitchen' element={<ExploreKitchen/>} />
           <Route path='/menu' element={<Menu />} />

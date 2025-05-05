@@ -69,6 +69,9 @@ export const AuthProvider = ({ children }) => {
       setUser(decoded);
       setIsLoggedIn(true);
 
+      // ✅ Store user details in localStorage
+      localStorage.setItem("user", JSON.stringify(decoded));
+
       if (role) {
         setAuthToken(token);
         setUserRole(role);

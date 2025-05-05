@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaUserPlus } from "react-icons/fa";
+import backendGlobalRoute from "../../config/config";
 
 export default function Register() {
   const [formData, setFormData] = useState({
