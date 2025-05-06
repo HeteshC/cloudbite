@@ -11,7 +11,8 @@ import Login from './pages/user_pages/Login'
 import Register from './pages/user_pages/Register'
 import ContactUs from "./pages/ContactUs/ContactUs"
 import ExploreKitchen from './pages/Cloudkitchens/CloudKitchens'
-// import { Menu } from '@headlessui/react'
+import StoreContextProvider from "./Context/StoreContext";
+import FoodList from "./Components/FoodList";
 
 const App = () => {
 
@@ -34,6 +35,9 @@ const App = () => {
           <Route path='/order' element={<PlaceOrder />} />
           <Route path="/contact-us" element={<ContactUs />} />
         </Routes>
+        <StoreContextProvider>
+          <FoodList />
+        </StoreContextProvider>
       </div>
       <Footer />
     </>
