@@ -16,10 +16,13 @@ const Navbar = ({ setShowLogin }) => {
 
   return (
     <div className="navbar">
-      <img src={assets.logo} alt="logo" className="logo" />
+      {/* Wrap the logo with a Link to redirect to the home page */}
+      <Link to="/">
+        <img src={assets.logo} alt="logo" className="logo" />
+      </Link>
 
       {/* Desktop Navigation */}
-      <ul className="navbar-menu">
+      {/* <ul className="navbar-menu">
         <li
           onClick={() => handleNavigation("home", "/")}
           className={menu === "home" ? "active" : ""}
@@ -45,7 +48,7 @@ const Navbar = ({ setShowLogin }) => {
         >
           Contact Us
         </li>
-      </ul>
+      </ul> */}
 
       {/* Search Field (Always Visible) */}
       <div className="hidden md:flex items-center border rounded-full p-2 px-4 bg-gray-100">
@@ -106,4 +109,3 @@ const Navbar = ({ setShowLogin }) => {
 
 export default Navbar;
 
-    
