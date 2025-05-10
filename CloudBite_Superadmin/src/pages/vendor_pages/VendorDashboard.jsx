@@ -1,176 +1,158 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
-import { AuthContext } from "../../components/common_components/AuthContext";
-import { FiHome, FiBox, FiUser, FiLogOut } from "react-icons/fi";
-import backendGlobalRoute from "../../config/config";
+
+import {
+  FaTh,
+  FaThLarge,
+  FaThList,
+  FaBox,
+  FaStore,
+  FaPlus,
+  FaShoppingCart,
+  FaSearch,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+
+import SearchBar from "../../components/common_components/SearchBar";
+import LeftSidebarNav from "../../components/common_components/LeftSidebarNav";
+import DashboardCard from "../../components/common_components/DashboardCard";
+import DashboardLayout from "../../components/common_components/DashboardLayout";
+import stopwords from "../../components/common_components/stopwords.jsx";
 
 const VendorDashboard = () => {
-  const { isLoggedIn, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [id, setId] = useState(null);
-  const [role, setRole] = useState(null);
-  const [productsCount, setProductsCount] = useState(0);
-  const [rawMaterialsCount, setRawMaterialsCount] = useState(0);
+  const [view, setView] = useState("grid");
+  const [search, setSearch] = useState("");
+  const [userId, setUserId] = useState(null);
 
-  // Decode token and set user details
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decodedToken = jwtDecode(token);
-        setId(decodedToken.id);
-        setRole(decodedToken.role);
-      } catch (error) {
-        console.error("Error decoding token:", error);
-        logout();
-        navigate("/my-account");
-      }
-    } else {
-      logout();
-      navigate("/my-account");
+    if (!token) return navigate("/login");
+    try {
+      const decoded = jwtDecode(token);
+      setUserId(decoded.id);
+    } catch (error) {
+      navigate("/login");
     }
-  }, [logout, navigate]);
+  }, [navigate]);
 
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!isLoggedIn) {
-      navigate("/my-account");
-    }
-  }, [isLoggedIn, navigate]);
+  const dummyCards = [
+    {
+      title: "Total Products",
+      value: 34,
+      icon: <FaBox className="text-indigo-600 text-3xl" />,
+      link: "/all-added-products",
+      bgColor: "bg-indigo-100 border border-indigo-300",
+    },
+    {
+      title: "Orders Received",
+      value: 19,
+      icon: <FaShoppingCart className="text-green-600 text-3xl" />,
+      link: "/vendor-orders",
+      bgColor: "bg-green-100 border border-green-300",
+    },
+    {
+      title: "Vendor Profile",
+      value: 1,
+      icon: <FaStore className="text-orange-600 text-3xl" />,
+      link: "/profile",
+      bgColor: "bg-orange-100 border border-orange-300",
+    },
+  ];
 
-  // Fetch vendor's product and raw material counts
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        // Fetch product count
-        const productsResponse = await axios.get(
-          `${backendGlobalRoute}/api/all-added-products`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const vendorProducts = productsResponse.data.filter(
-          (product) => product.vendor && product.vendor.toString() === id
-        );
-        setProductsCount(vendorProducts.length);
-
-        // Fetch raw material count
-        const rawMaterialsResponse = await axios.get(
-          `${backendGlobalRoute}/api/all-raw-materials`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const vendorRawMaterials = rawMaterialsResponse.data.filter(
-          (rawMaterial) => rawMaterial.vendor && rawMaterial.vendor._id === id
-        );
-        setRawMaterialsCount(vendorRawMaterials.length);
-      } catch (error) {
-        console.error("Error fetching vendor counts:", error);
-      }
-    };
-
-    if (id) {
-      fetchCounts();
-    }
-  }, [id]);
+  const filteredCards =
+    search.trim() === ""
+      ? dummyCards
+      : dummyCards.filter((card) => {
+          const text = `${card.title} ${card.value}`.toLowerCase();
+          const queryWords = search
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((word) => !stopwords.includes(word));
+          return queryWords.some(
+            (word) =>
+              text.includes(word) || text.includes(word.replace(/s$/, ""))
+          );
+        });
 
   return (
-    <div className="flex flex-col bg-white mt-5 mb-5">
-      <div className="flex-grow flex flex-col md:flex-row w-full md:w-5/6 mx-auto py-6 px-4 gap-6">
-        {/* Left Navigation */}
-        <div className="w-full md:w-1/5 bg-gray-50 shadow-md rounded-lg p-4 self-start">
-          <ul className="space-y-4">
-            <li>
-              <Link
-                to={`/${
-                  role === "vendor"
-                    ? `vendor-dashboard/${id}`
-                    : `user-dashboard/${id}`
-                }`}
-                className="flex items-center gap-4 p-3 rounded-lg text-gray-800 hover:bg-gray-200 hover:text-blue-700"
-              >
-                <FiHome size={20} />
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link
-                to={`/profile/${id}`}
-                className="flex items-center gap-4 p-3 rounded-lg text-gray-800 hover:bg-gray-200 hover:text-blue-700"
-              >
-                <FiUser size={20} />
-                <span>Account Details</span>
-              </Link>
-            </li>
-            <li>
-              <button
-                onClick={() => {
-                  logout();
-                  navigate("/my-account");
-                }}
-                className="flex items-center gap-4 p-3 rounded-lg text-gray-800 hover:bg-gray-200 hover:text-red-700"
-              >
-                <FiLogOut size={20} />
-                <span>Logout</span>
-              </button>
-            </li>
-          </ul>
-        </div>
-
-        {/* Right Section */}
-        <div className="w-full md:w-4/5">
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-3xl font-semibold text-gray-700">
-              Vendor Dashboard
-            </p>
-          </div>
-
-          {/* Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {/* Products Card */}
-            <div className="bg-white p-6 shadow-lg rounded-lg">
-              <h3 className="text-2xl font-bold mb-4 text-gray-800">
-                Products
-              </h3>
-              <p className="text-gray-600">
-                Total Products:{" "}
-                <span className="text-blue-500 font-semibold">
-                  {productsCount}
-                </span>
-              </p>
-              <Link
-                to={`/vendor-products/${id}`}
-                className="text-blue-600 hover:underline mt-3 block"
-              >
-                View Products
-              </Link>
-            </div>
-
-            {/* Raw Materials Card */}
-            <div className="bg-white p-6 shadow-lg rounded-lg">
-              <h3 className="text-2xl font-bold mb-4 text-gray-800">
-                Raw Materials
-              </h3>
-              <p className="text-gray-600">
-                Total Raw Materials:{" "}
-                <span className="text-green-500 font-semibold">
-                  {rawMaterialsCount}
-                </span>
-              </p>
-              <Link
-                to={`/vendor-raw-materials/${id}`}
-                className="text-green-600 hover:underline mt-3 block"
-              >
-                View Raw Materials
-              </Link>
-            </div>
+    <div className="fullWidth py-6">
+      <div className="containerWidth">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <h1 className="headingText">Vendor Dashboard</h1>
+          <div className="flex items-center gap-3 flex-wrap">
+            <FaThList
+              className={`text-xl cursor-pointer ${
+                view === "list" ? "text-indigo-600" : "text-gray-600"
+              }`}
+              onClick={() => setView("list")}
+            />
+            <FaThLarge
+              className={`text-xl cursor-pointer ${
+                view === "card" ? "text-indigo-600" : "text-gray-600"
+              }`}
+              onClick={() => setView("card")}
+            />
+            <FaTh
+              className={`text-xl cursor-pointer ${
+                view === "grid" ? "text-indigo-600" : "text-gray-600"
+              }`}
+              onClick={() => setView("grid")}
+            />
+            <SearchBar
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search cards..."
+            />
           </div>
         </div>
+
+        {/* Layout */}
+        <DashboardLayout
+          left={
+            <LeftSidebarNav
+              navigate={navigate}
+              items={[
+                {
+                  label: "Add Product",
+                  icon: <FaPlus className="text-green-600" />,
+                  path: "/add-product",
+                },
+                {
+                  label: "View Orders",
+                  icon: <FaShoppingCart className="text-teal-600" />,
+                  path: "/vendor-orders",
+                },
+                {
+                  label: "Manage Profile",
+                  icon: <FaStore className="text-orange-500" />,
+                  path: "/profile",
+                },
+              ]}
+            />
+          }
+          right={
+            <div
+              className={`${
+                view === "grid"
+                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
+                  : view === "card"
+                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
+                  : "space-y-4"
+              }`}
+            >
+              {filteredCards.map((card, index) => (
+                <DashboardCard
+                  key={index}
+                  card={card}
+                  view={view}
+                  onClick={() => navigate(card.link)}
+                />
+              ))}
+            </div>
+          }
+        />
       </div>
     </div>
   );

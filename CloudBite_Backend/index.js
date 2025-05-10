@@ -1,3 +1,4 @@
+// 1 import all libraries.
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -6,49 +7,54 @@ const dotenv = require("dotenv");
 const jwt = require("jsonwebtoken"); // For token verification
 const path = require("path");
 const fs = require("fs");
-const blogRoutes = require("./routes/BlogRoutes");
+const bcrypt = require("bcrypt");
 
-//import user routes.
 const userRoutes = require("./routes/UserRoutes");
-const contactRoutes = require("./routes/ContactRoutes");
-const subscriptionRoutes = require("./routes/SubscriptionRoutes");
+const activityRoutes = require("./routes/ActivityRoutes");
+const entityCountRoutes = require("./routes/EntityCountRoutes");
 const categoryRoutes = require("./routes/CategoryRoutes");
-const productRoutes = require("./routes/ProductRoutes");
-const vendorRoutes = require("./routes/VendorRoutes");
+const subCategoryRoutes = require("./routes/SubCategoryRoutes");
 const outletRoutes = require("./routes/OutletRoutes");
-const foodRouter = require("./routes/FoodRoutes");
+const vendorRoutes = require("./routes/VendorRoutes");
+const productRoutes = require("./routes/ProductRoutes");
+const cartRoutes = require("./routes/cartRoutes");
+const orderRoutes = require("./routes/OrderRoutes");
+const wishlistRoutes = require("./routes/WishlistRoutes");
+const addressRoutes = require("./routes/AddressRoutes");
+const contactRoutes = require("./routes/ContactRoutes");
+const foodRoutes = require("./routes/FoodRoutes");
 
-
+// 2. give a name to your api backend. app = express()
 dotenv.config();
 const app = express();
-
 // Middleware
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-    ], // Replace with your frontend's URL
+    origin: ["http://localhost:5173", "http://localhost:5174"], // Replace with your frontend's URL
     credentials: true, // Enable credentials
   })
 );
-app.use(express.json());
+
+app.use(express.json()); // Add this middleware to parse JSON request body
+app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Routes
 app.use("/api", userRoutes);
-app.use("/api", contactRoutes);
-app.use("/api", blogRoutes);
-app.use("/api", subscriptionRoutes);
+app.use("/api", activityRoutes);
 app.use("/api", categoryRoutes);
-app.use("/api", productRoutes);
-app.use("/api", vendorRoutes);
 app.use("/api", outletRoutes);
-app.use("/api/food", foodRouter);
-
-
+app.use("/api", vendorRoutes);
+app.use("/api", entityCountRoutes);
+app.use("/api", subCategoryRoutes);
+app.use("/api", productRoutes);
+app.use("/api", cartRoutes);
+app.use("/api", orderRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api", addressRoutes);
+app.use("/api", contactRoutes);
+app.use("/api", foodRoutes);
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -59,17 +65,20 @@ app.use((req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 3001;
+// 8. port number 3006
+const PORT = process.env.PORT;
 
+// 9 . connect to mongodb.
 mongoose
   .connect("mongodb://127.0.0.1:27017/cloudbite")
   .then(() => {
     console.log("Connected to mongodb.");
   })
   .catch((err) => {
-    console.log("Connection to mongo db failed,", err);
+    console.log("Connection to mongodb failed,", err);
   });
 
+// 10. app.listen(port)
 app.listen(PORT, () => {
   console.log(`Connected to server successfully at port number ${PORT}`);
 });

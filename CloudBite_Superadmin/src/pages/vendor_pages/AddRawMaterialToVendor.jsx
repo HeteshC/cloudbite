@@ -11,7 +11,6 @@ import {
 } from "react-icons/fa";
 import { MdSave } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
-import backendGlobalRoute from "../../config/config";
 
 const AddRawMaterialToVendor = () => {
   const navigate = useNavigate();
@@ -36,7 +35,7 @@ const AddRawMaterialToVendor = () => {
   useEffect(() => {
     const fetchVendors = async () => {
       try {
-        const response = await axios.get(`${backendGlobalRoute}/api/vendors`);
+        const response = await axios.get("http://localhost:3006/api/vendors");
         setVendors(response.data);
       } catch (error) {
         console.error("Error fetching vendors:", error);
@@ -61,10 +60,7 @@ const AddRawMaterialToVendor = () => {
     };
 
     try {
-      await axios.post(
-        `${backendGlobalRoute}/api/add-raw-material`,
-        rawMaterialData
-      );
+      await axios.post("http://localhost:3006/api/add-raw-material", rawMaterialData);
       alert("Raw material added successfully!");
       setRawMaterial({
         raw_material_name: "",

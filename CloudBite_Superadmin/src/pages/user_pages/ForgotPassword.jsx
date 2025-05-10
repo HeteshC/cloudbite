@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { FaEnvelope, FaKey } from "react-icons/fa"; // Import icons
-import backendGlobalRoute from "../../config/config";
+import { FaEnvelope, FaKey } from "react-icons/fa";
+import globalBackendRoute from "../../config/Config";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -11,127 +11,117 @@ const ForgotPassword = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Handle email input change
-  const handleEmailChange = (e) => {
-    setEmail(e.target.value);
-  };
-
-  // Handle OTP input change
-  const handleOtpChange = (e) => {
-    setOtp(e.target.value);
-  };
-
-  // Send OTP to user's email
   const handleSendOtp = async () => {
     try {
-      await axios.post(`${backendGlobalRoute}/api/forgot-password`, {
-        email,
-      });
+      const response = await axios.post(
+        `${globalBackendRoute}/api/forgot-password`,
+        { email }
+      );
       alert("OTP sent successfully to your email!");
       setOtpSent(true);
       setError("");
     } catch (error) {
+      console.error(
+        "OTP sending error:",
+        error.response?.data || error.message
+      );
+      setOtpSent(false);
       setError("Failed to send OTP. Please check your email and try again.");
+      alert("Failed to send OTP. Check email or try again.");
     }
   };
 
-  // Verify OTP and proceed to reset password
   const handleVerifyOtp = async () => {
     try {
-      await axios.post(`${backendGlobalRoute}/api/verify-otp`, {
-        email,
-        otp,
-      });
+      await axios.post(`${globalBackendRoute}/api/verify-otp`, { email, otp });
       alert("OTP verified! Redirecting to reset password page...");
-      navigate("/reset-password", { state: { email, otp } }); // Pass both email and otp
+      navigate("/reset-password", { state: { email, otp } });
     } catch (error) {
       setError("Invalid OTP. Please try again.");
     }
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm text-center">
-        <FaKey className="text-gray-600 mx-auto mb-2" size={48} />
-        <h2 className="mt-4 text-center text-2xl font-bold leading-9 tracking-tight text-gray-600">
+    <div className="compactWidth py-12">
+      {/* Header */}
+      <div className="text-center">
+        <FaKey className="iconPrimary mx-auto" size={48} />
+        <h2 className="headingTextMobile lg:headingText mt-4">
           Forgot Password
         </h2>
       </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium leading-6 text-gray-900 flex items-center"
-            >
-              <FaEnvelope className="text-blue-500 mr-2" /> Email address
-            </label>
-            <div className="mt-2">
+      {/* Form */}
+      <form className="mt-10 space-y-6">
+        {/* Email */}
+        <div>
+          <label htmlFor="email" className="formLabel flex items-center gap-2">
+            <FaEnvelope className="text-blue-500" />
+            Email address
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            className="formInput mt-2"
+            placeholder="Enter your registered email"
+          />
+        </div>
+
+        {/* Send OTP Button */}
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={handleSendOtp}
+            className="primaryBtn w-auto px-6"
+          >
+            Send OTP
+          </button>
+        </div>
+
+        {/* OTP Input */}
+        {otpSent && (
+          <>
+            <div>
+              <label
+                htmlFor="otp"
+                className="formLabel flex items-center gap-2"
+              >
+                <FaKey className="text-purple-500" />
+                OTP
+              </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="otp"
+                name="otp"
+                type="text"
                 required
-                value={email}
-                onChange={handleEmailChange}
-                autoComplete="email"
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter OTP"
+                className="formInput mt-2"
               />
             </div>
-          </div>
 
-          <div>
+            {/* Verify OTP Button */}
             <div className="text-center">
               <button
                 type="button"
-                onClick={handleSendOtp}
-                className="text-white bg-red-500 hover:bg-red-600 rounded-pill px-3 py-2"
+                onClick={handleVerifyOtp}
+                className="primaryBtn w-auto px-6"
               >
-                Send OTP
+                Verify OTP
               </button>
             </div>
-          </div>
+          </>
+        )}
 
-          {otpSent && (
-            <>
-              <div>
-                <label
-                  htmlFor="otp"
-                  className="block text-sm font-medium leading-6 text-gray-900 flex items-center"
-                >
-                  <FaKey className="text-purple-500 mr-2" /> OTP
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="otp"
-                    name="otp"
-                    type="text"
-                    required
-                    value={otp}
-                    onChange={handleOtpChange}
-                    placeholder="Enter OTP"
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleVerifyOtp}
-                    className="text-white bg-red-500 hover:bg-red-600 rounded-pill px-3 py-2"
-                  >
-                    Verify OTP
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-        </form>
-      </div>
+        {/* Error Message */}
+        {error && <p className="errorText text-center">{error}</p>}
+      </form>
     </div>
   );
 };

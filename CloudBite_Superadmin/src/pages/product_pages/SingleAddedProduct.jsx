@@ -1,538 +1,267 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+// pages/product_pages/SingleAddedProduct.jsx
+import React, { useEffect, useState } from "react";
 import {
-  MdAdd,
-  MdViewList,
-  MdDelete,
-  MdEdit,
-  MdSave,
-  MdImage,
-} from "react-icons/md";
-import { useParams, useNavigate } from "react-router-dom";
-import backendGlobalRoute from "../../config/config";
+  FaUser,
+  FaTags,
+  FaWarehouse,
+  FaStore,
+  FaCube,
+  FaPalette,
+  FaClipboardList,
+  FaStar,
+  FaChartLine,
+  FaPercentage,
+  FaListOl,
+  FaClock,
+  FaFlag,
+  FaGlobe,
+  FaCheck,
+} from "react-icons/fa";
+import { MdEdit } from "react-icons/md";
+import { motion } from "framer-motion";
+import { Link, useParams } from "react-router-dom";
+import axios from "axios";
+import globalBackendRoute from "../../config/Config";
+import ModernFileInput from "../../components/common_components/ModernFileInput";
+import ModernTextInput from "../../components/common_components/MordernTextInput";
 
 export default function SingleAddedProduct() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-
   const [productData, setProductData] = useState(null);
-  const [editing, setEditing] = useState(false);
-  const [productUpdates, setProductUpdates] = useState({});
-  const [forceRender, setForceRender] = useState(false);
-  const [newProductImage, setNewProductImage] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [updatedFields, setUpdatedFields] = useState({});
+  const [newMainImage, setNewMainImage] = useState(null);
+  const [newGalleryImages, setNewGalleryImages] = useState([]);
+  const { id } = useParams();
 
   useEffect(() => {
     const fetchProductData = async () => {
       try {
         const response = await axios.get(
-          `${backendGlobalRoute}/api/single-product/${id}`
+          `${globalBackendRoute}/api/get-single-added-product-by-id/${id}`
         );
         setProductData(response.data);
-        setProductUpdates(response.data);
+
+        const dataCopy = { ...response.data };
+        delete dataCopy.vendor;
+        delete dataCopy.outlet;
+        delete dataCopy.category;
+        delete dataCopy.subcategory;
+        setUpdatedFields(dataCopy);
       } catch (error) {
         console.error("Error fetching product data:", error);
       }
     };
-
     fetchProductData();
-  }, [id, forceRender]);
+  }, [id]);
 
-  const handleDeleteProduct = async () => {
-    const confirmation = window.confirm(
-      "Are you sure you want to delete this product?"
-    );
-    if (!confirmation) return;
-
+  const handleUpdate = async () => {
     try {
-      await axios.delete(`${backendGlobalRoute}/api/delete-product/${id}`);
-      alert("Product deleted successfully.");
-      navigate("/all-added-products");
-    } catch (error) {
-      console.error("Error deleting product:", error);
-    }
-  };
+      const formData = new FormData();
 
-  const handleUpdateProduct = async () => {
-    try {
-      const response = await axios.put(
-        `${backendGlobalRoute}/api/update-product/${id}`,
-        productUpdates
+      // Append all updated fields
+      Object.entries(updatedFields).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) {
+          if (Array.isArray(val)) {
+            formData.append(key, JSON.stringify(val));
+          } else {
+            formData.append(key, val);
+          }
+        }
+      });
+
+      // Handle new main image
+      if (newMainImage) {
+        formData.append("product_image", newMainImage);
+      }
+
+      // Handle new gallery images
+      if (newGalleryImages.length > 0) {
+        newGalleryImages.forEach((file) => {
+          formData.append("all_product_images", file);
+        });
+      }
+
+      await axios.put(
+        `${globalBackendRoute}/api/update-product/${id}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
       );
-
-      setProductData(response.data);
-      setProductUpdates(response.data);
 
       alert("Product updated successfully!");
-      setEditing(false);
-      setForceRender(!forceRender);
+      window.location.reload();
     } catch (error) {
       console.error("Error updating product:", error);
+      alert("Failed to update the product. Please try again.");
     }
   };
 
-  const handleInputChange = (field, value) => {
-    if (field === "tags" && typeof value === "string") {
-      setProductUpdates({ ...productUpdates, [field]: value.split(",") });
-    } else {
-      setProductUpdates({ ...productUpdates, [field]: value });
-    }
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "https://via.placeholder.com/150";
+    return `${globalBackendRoute}/${imagePath.replace(/\\/g, "/")}`;
   };
 
-  const handleProductImageChange = (e) => {
-    setNewProductImage(e.target.files[0]);
-  };
+  const safe = (val) =>
+    val === null || val === undefined || val === "" ? "NA" : val;
 
-  const handleProductImageUpload = async () => {
-    if (!newProductImage) {
-      alert("Please select an image to upload.");
-      return;
-    }
+  if (!productData) return <div className="text-center py-8">Loading...</div>;
 
-    const formData = new FormData();
-    formData.append("product_image", newProductImage);
-
-    try {
-      const response = await axios.put(
-        `${backendGlobalRoute}/api/update-product-image/${id}`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      alert("Product image updated successfully!");
-      setForceRender(!forceRender);
-      setNewProductImage(null);
-    } catch (error) {
-      console.error("Error updating product image:", error);
-    }
-  };
-
-  const goToManageImagesPage = () => {
-    navigate(`/manage-product-images/${id}`);
-  };
-
-  const getImageUrl = (imageUrl) => {
-    if (imageUrl) {
-      const normalizedPath = imageUrl
-        .replace(/\\/g, "/")
-        .split("uploads/")
-        .pop();
-      return `${backendGlobalRoute}/uploads/${normalizedPath}`;
-    }
-    return "https://via.placeholder.com/150";
-  };
-
-  if (!productData) {
-    return <div>Loading...</div>;
-  }
+  const allFields = [
+    { icon: <FaUser />, label: "Product Name", key: "product_name" },
+    { icon: <FaTags />, label: "SKU", key: "sku" },
+    { icon: <FaWarehouse />, label: "Stock", key: "stock" },
+    { icon: <FaStore />, label: "Brand", key: "brand" },
+    { icon: <FaPalette />, label: "Color", key: "color" },
+    { icon: <FaCube />, label: "Material", key: "material" },
+    { icon: <FaClipboardList />, label: "Display Price", key: "display_price" },
+    { icon: <FaClipboardList />, label: "Selling Price", key: "selling_price" },
+    { icon: <FaStar />, label: "Avg Rating", key: "avg_rating" },
+    { icon: <FaClipboardList />, label: "Total Reviews", key: "total_reviews" },
+    { icon: <FaChartLine />, label: "Total Sold", key: "total_products_sold" },
+    { icon: <FaTags />, label: "Tags", key: "tags" },
+    { icon: <FaPercentage />, label: "Discount", key: "discount" },
+    { icon: <FaListOl />, label: "Min Qty", key: "min_purchase_qty" },
+    { icon: <FaListOl />, label: "Max Qty", key: "max_purchase_qty" },
+    {
+      icon: <FaClock />,
+      label: "Delivery Estimate",
+      key: "delivery_time_estimate",
+    },
+    { icon: <FaFlag />, label: "Origin Country", key: "origin_country" },
+    { icon: <FaGlobe />, label: "Availability", key: "availability_status" },
+    { icon: <FaCheck />, label: "Featured", key: "featured" },
+    { icon: <FaCheck />, label: "New Arrival", key: "is_new_arrival" },
+    { icon: <FaCheck />, label: "Trending", key: "is_trending" },
+    { icon: <FaTags />, label: "Meta Title", key: "meta_title" },
+    { icon: <FaTags />, label: "Meta Description", key: "meta_description" },
+    { icon: <FaTags />, label: "Slug", key: "slug" },
+    {
+      icon: <FaClipboardList />,
+      label: "Section Appear",
+      key: "section_to_appear",
+    },
+    { icon: <FaTags />, label: "Version", key: "version" },
+    { icon: <FaTags />, label: "Admin Notes", key: "admin_notes" },
+  ];
 
   return (
-    <div className="bg-white py-10 sm:py-16">
-      <div className="max-w-6xl mx-auto p-4 bg-white rounded-lg">
-        <div className="flex justify-between items-center flex-wrap mb-4">
-          <h2 className="text-3xl font-bold text-gray-900">Product Details</h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={editing ? handleUpdateProduct : () => setEditing(true)}
-              className="flex items-center px-3 py-1 mt-2 bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-500 text-white font-semibold rounded-md shadow hover:opacity-90 transition-opacity text-sm"
-            >
-              {editing ? (
-                <MdSave className="mr-1" />
-              ) : (
-                <MdEdit className="mr-1" />
-              )}
-              {editing ? "Save" : "Edit"}
-            </button>
-            <button
-              onClick={handleDeleteProduct}
-              className="flex items-center px-3 py-1 mt-2 bg-gradient-to-r from-red-500 to-red-700 text-white font-semibold rounded-md shadow hover:opacity-90 transition-opacity text-sm"
-            >
-              <MdDelete className="mr-1" />
-              Delete
-            </button>
-            <button
-              onClick={() => navigate("/all-added-products")}
-              className="flex items-center px-3 py-1 mt-2 bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-500 text-white font-semibold rounded-md shadow hover:opacity-90 transition-opacity text-sm"
-            >
-              <MdViewList className="mr-1" />
-              All Products
-            </button>
-          </div>
-        </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="containerWidth my-6"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-start items-center gap-6">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-full sm:w-1/3 space-y-4"
+        >
+          <img
+            src={getImageUrl(productData.product_image)}
+            alt={productData.product_name || "Product"}
+            className="w-full h-48 object-cover rounded-xl border"
+          />
 
-        <div className="flex flex-col sm:flex-row items-start space-y-6 sm:space-y-0 sm:space-x-6">
-          <div className="w-full sm:w-1/2">
-            <div
-              className="w-full h-auto object-cover rounded-lg"
-              style={{
-                width: "300px",
-                height: "300px",
-                backgroundColor: "#f0f0f0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <img
-                src={getImageUrl(productData.product_image)}
-                alt={productData.product_name}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                }}
-                className="rounded-lg"
+          {editMode && (
+            <>
+              {/* Main Product Image Upload */}
+              <ModernFileInput
+                label="Update Main Product Image"
+                multiple={false}
+                onFileSelect={(file) => setNewMainImage(file)}
               />
-            </div>
-            <div className="flex mt-4 space-x-2">
-              {productData.all_product_images?.length > 0
-                ? productData.all_product_images.map((image, index) => (
-                    <img
-                      key={index}
-                      src={getImageUrl(image)}
-                      alt={`Additional ${index}`}
-                      className="object-cover rounded-lg"
-                      style={{
-                        width: "80px",
-                        height: "80px",
-                        objectFit: "contain",
-                        backgroundColor: "#f0f0f0",
-                      }}
-                    />
-                  ))
-                : "No additional images available."}
-            </div>
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Update Product Image
-              </h3>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleProductImageChange}
-                className="mt-4"
-              />
-              <button
-                onClick={handleProductImageUpload}
-                className="px-4 py-2 mt-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-md shadow hover:opacity-90 transition-opacity text-sm"
-              >
-                Upload Image
-              </button>
-            </div>
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Manage Other Product Images
-              </h3>
-              <button
-                onClick={goToManageImagesPage}
-                className="px-4 py-2 mt-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold rounded-md shadow hover:opacity-90 transition-opacity text-sm flex items-center"
-              >
-                <MdImage className="mr-1" />
-                Manage Images
-              </button>
-            </div>
-          </div>
 
-          <div className="w-full sm:w-1/2">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Product:{" "}
-              {editing ? (
-                <input
-                  type="text"
-                  value={productUpdates.product_name || ""}
-                  onChange={(e) =>
-                    handleInputChange("product_name", e.target.value)
-                  }
-                  className="w-full px-4 py-2 border rounded-md"
+              {/* Gallery Images Upload */}
+              <ModernFileInput
+                label="Update Gallery Images (Max 10)"
+                multiple={true}
+                maxFiles={10}
+                onFileSelect={(files) => setNewGalleryImages(files)}
+              />
+            </>
+          )}
+
+          {/* Existing Gallery Images Preview */}
+          {productData.all_product_images?.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              {productData.all_product_images.map((img, i) => (
+                <img
+                  key={i}
+                  src={getImageUrl(img)}
+                  alt={`Gallery ${i}`}
+                  className="w-full h-20 object-cover rounded-lg border"
                 />
-              ) : (
-                productData.product_name || "N/A"
-              )}
-            </h3>
-
-            <div className="mt-4 border-t border-gray-100">
-              <dl className="divide-y divide-gray-100">
-                {/* Description */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Description
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <textarea
-                        value={productUpdates.description || ""}
-                        onChange={(e) =>
-                          handleInputChange("description", e.target.value)
-                        }
-                        className="w-full px-4 py-2 border rounded-md"
-                      />
-                    ) : (
-                      productData.description || "N/A"
-                    )}
-                  </dd>
-                </div>
-
-                {/* Category
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Category
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <input
-                        type="text"
-                        value={productUpdates.category?.name || ""}
-                        onChange={(e) =>
-                          handleInputChange("category", e.target.value)
-                        }
-                        className="w-full px-4 py-2 border rounded-md"
-                      />
-                    ) : (
-                      productData.category?.name || "N/A"
-                    )}
-                  </dd>
-                </div> */}
-
-                {/* Stock */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">Stock</dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <input
-                        type="number"
-                        value={productUpdates.stock || ""}
-                        onChange={(e) =>
-                          handleInputChange("stock", e.target.value)
-                        }
-                        className="w-full px-4 py-2 border rounded-md"
-                      />
-                    ) : (
-                      productData.stock
-                    )}
-                  </dd>
-                </div>
-
-                {/* Total Products Sold
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Total Products Sold
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {productData.total_products_sold}
-                  </dd>
-                </div> */}
-
-                {/* Brand */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">Brand</dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <input
-                        type="text"
-                        value={productUpdates.brand || ""}
-                        onChange={(e) =>
-                          handleInputChange("brand", e.target.value)
-                        }
-                        className="w-full px-4 py-2 border rounded-md"
-                      />
-                    ) : (
-                      productData.brand
-                    )}
-                  </dd>
-                </div>
-
-                {/* SKU */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">SKU</dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <input
-                        type="text"
-                        value={productUpdates.SKU || ""}
-                        onChange={(e) =>
-                          handleInputChange("SKU", e.target.value)
-                        }
-                        className="w-full px-4 py-2 border rounded-md"
-                      />
-                    ) : (
-                      productData.SKU
-                    )}
-                  </dd>
-                </div>
-
-                {/* Dimensions */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Dimensions (LxWxH)
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <div className="grid grid-cols-3 gap-2">
-                        <input
-                          type="number"
-                          value={productUpdates.dimensions?.length || ""}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "dimensions.length",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Length"
-                          className="w-full px-4 py-2 border rounded-md"
-                        />
-                        <input
-                          type="number"
-                          value={productUpdates.dimensions?.width || ""}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "dimensions.width",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Width"
-                          className="w-full px-4 py-2 border rounded-md"
-                        />
-                        <input
-                          type="number"
-                          value={productUpdates.dimensions?.height || ""}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "dimensions.height",
-                              e.target.value
-                            )
-                          }
-                          placeholder="Height"
-                          className="w-full px-4 py-2 border rounded-md"
-                        />
-                      </div>
-                    ) : (
-                      `L: ${productData.dimensions?.length || "N/A"}, W: ${
-                        productData.dimensions?.width || "N/A"
-                      }, H: ${productData.dimensions?.height || "N/A"}`
-                    )}
-                  </dd>
-                </div>
-
-                {/* Tags */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">Tags</dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <input
-                        type="text"
-                        value={productUpdates.tags?.join(", ") || ""}
-                        onChange={(e) =>
-                          handleInputChange("tags", e.target.value)
-                        }
-                        className="w-full px-4 py-2 border rounded-md"
-                      />
-                    ) : (
-                      productData.tags?.join(", ") || "N/A"
-                    )}
-                  </dd>
-                </div>
-
-                {/* Discount */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Discount
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <input
-                        type="number"
-                        value={productUpdates.discount || ""}
-                        onChange={(e) =>
-                          handleInputChange("discount", e.target.value)
-                        }
-                        className="w-full px-4 py-2 border rounded-md"
-                      />
-                    ) : (
-                      `${productData.discount || 0}%`
-                    )}
-                  </dd>
-                </div>
-
-                {/* Availability Status */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Availability Status
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {editing ? (
-                      <input
-                        type="checkbox"
-                        checked={productUpdates.availability_status || false}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "availability_status",
-                            e.target.checked
-                          )
-                        }
-                      />
-                    ) : productData.availability_status ? (
-                      "Available"
-                    ) : (
-                      "Out of Stock"
-                    )}
-                  </dd>
-                </div>
-                {/* Outlet Information */}
-                <div className="py-2">
-                  <dt className="text-sm font-medium text-gray-900">Outlets</dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {productData.outlet?.length > 0
-                      ? productData.outlet.map((outletEntry, index) => (
-                          <div key={index} className="mt-2">
-                            <strong>Outlet:</strong>{" "}
-                            {outletEntry.outlet?.name || "N/A"}
-                            <div>
-                              {outletEntry.products.map((product, idx) => (
-                                <div key={idx}>
-                                  <span>
-                                    Volume: {product.volume}, Selling Price: ₹
-                                    {product.selling_price}, Display Price: ₹
-                                    {product.display_price}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))
-                      : "No outlet information available."}
-                  </dd>
-                </div>
-
-                {/* Vendor */}
-                {/* <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">Vendor</dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {productData.vendor?.name || "N/A"}
-                  </dd>
-                </div> */}
-
-                {/* Created At */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Product Added On
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {new Date(productData.createdAt).toLocaleString()}
-                  </dd>
-                </div>
-
-                {/* Updated At */}
-                <div className="py-2 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="text-sm font-medium text-gray-900">
-                    Updated At
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-700 sm:col-span-2 sm:mt-0">
-                    {new Date(productData.updatedAt).toLocaleString()}
-                  </dd>
-                </div>
-              </dl>
+              ))}
             </div>
+          )}
+        </motion.div>
+
+        <div className="w-full sm:w-2/3">
+          <motion.h3
+            className="subHeadingTextMobile lg:subHeadingText mb-4"
+            initial={{ x: -30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+          >
+            Product Details
+          </motion.h3>
+
+          <div className="border-t border-gray-200 divide-y divide-gray-100">
+            {allFields.map((field, idx) => (
+              <ProductField
+                key={idx}
+                icon={field.icon}
+                label={field.label}
+                value={
+                  editMode && field.key ? (
+                    <ModernTextInput
+                      value={updatedFields[field.key] || ""}
+                      onChange={(e) =>
+                        setUpdatedFields((prev) => ({
+                          ...prev,
+                          [field.key]: e.target.value,
+                        }))
+                      }
+                    />
+                  ) : (
+                    safe(updatedFields[field.key])
+                  )
+                }
+              />
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => (editMode ? handleUpdate() : setEditMode(true))}
+              className="primaryBtn w-fit px-6 py-2 rounded-full flex items-center gap-2"
+            >
+              <MdEdit /> {editMode ? "Save Changes" : "Edit Product"}
+            </button>
+
+            <Link
+              to="/all-added-products"
+              className="secondaryBtn w-fit px-6 py-2 rounded-full"
+            >
+              Back to All Products
+            </Link>
           </div>
         </div>
       </div>
+    </motion.div>
+  );
+}
+
+function ProductField({ icon, label, value }) {
+  return (
+    <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 px-2 sm:px-4">
+      <dt className="flex items-center text-sm font-medium text-gray-700 gap-2">
+        {icon} {label}
+      </dt>
+      <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+        {value}
+      </dd>
     </div>
   );
 }

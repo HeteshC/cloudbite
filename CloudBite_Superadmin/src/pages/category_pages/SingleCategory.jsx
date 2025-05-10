@@ -1,28 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { FaUser, FaEdit } from "react-icons/fa";
+import { FaImage, FaUser, FaCalendarAlt } from "react-icons/fa";
+import { MdEdit } from "react-icons/md";
+import { motion } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
-import backendGlobalRoute from "../../config/config";
+import globalBackendRoute from "../../config/Config";
+import ModernFileInput from "../../components/common_components/ModernFileInput";
+import ModernTextInput from "../../components/common_components/MordernTextInput";
 
 export default function SingleCategory() {
   const [categoryData, setCategoryData] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [updatedCategoryName, setUpdatedCategoryName] = useState("");
+  const [newCategoryImage, setNewCategoryImage] = useState(null);
   const { id } = useParams();
 
   useEffect(() => {
     const fetchCategoryData = async () => {
       try {
         const response = await axios.get(
-          `${backendGlobalRoute}/api/single-category/${id}`
+          `${globalBackendRoute}/api/single-category/${id}`
         );
         setCategoryData(response.data);
-        setUpdatedCategoryName(response.data.category_name); // Initialize the editable field
+        setUpdatedCategoryName(response.data.category_name);
       } catch (error) {
         console.error("Error fetching category data:", error);
       }
     };
-
     fetchCategoryData();
   }, [id]);
 
@@ -32,87 +36,139 @@ export default function SingleCategory() {
       return;
     }
 
+    const formData = new FormData();
+    formData.append("category_name", updatedCategoryName);
+    if (newCategoryImage) {
+      formData.append("category_image", newCategoryImage);
+    }
+
     try {
-      await axios.put(`${backendGlobalRoute}/api/update-category/${id}`, {
-        category_name: updatedCategoryName,
-      });
-      alert("Category name updated successfully!");
-      window.location.reload(); // Reload the page to show the updated name
+      await axios.put(
+        `${globalBackendRoute}/api/update-category/${id}`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      alert("Category updated successfully!");
+      window.location.reload();
     } catch (error) {
       console.error("Error updating category:", error);
       alert("Failed to update the category. Please try again.");
     }
   };
 
-  if (!categoryData) {
-    return <div>Loading...</div>;
-  }
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "https://via.placeholder.com/150";
+    return `${globalBackendRoute}/${imagePath.replace(/\\/g, "/")}`;
+  };
+
+  if (!categoryData) return <div className="text-center py-8">Loading...</div>;
 
   return (
-    <div className="bg-white py-16 sm:py-20">
-      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg">
-        <div className="flex justify-between items-center flex-wrap">
-          <h2 className="text-3xl font-bold text-gray-900">Main Category</h2>
-          <div className="flex space-x-2 flex-wrap">
-            {/* Link to View All Categories */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="containerWidth my-6"
+    >
+      <div className="flex flex-col sm:flex-row sm:items-start items-center gap-6">
+        {/* Category Image */}
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-auto h-full sm:w-48 sm:h-48"
+        >
+         <img
+  src={
+    categoryData.category_image
+      ? getImageUrl(categoryData.category_image)
+      : "https://via.placeholder.com/150"
+  }
+  alt={categoryData.category_name || "Category"}
+  className="w-full h-full object-cover rounded-xl border"
+/>
+        </motion.div>
+
+        {/* Category Details */}
+        <div className="w-full">
+          <motion.h3
+            className="subHeadingTextMobile lg:subHeadingText mb-4"
+            initial={{ x: -30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+          >
+            Category Details
+          </motion.h3>
+
+          <div className="border-t border-gray-200 divide-y divide-gray-100">
+            <CategoryField
+              icon={<FaUser className="text-blue-600" />}
+              label="Category Name"
+              value={
+                editMode ? (
+                  <ModernTextInput
+                    value={updatedCategoryName}
+                    onChange={(e) => setUpdatedCategoryName(e.target.value)}
+                  />
+                ) : (
+                  categoryData.category_name
+                )
+              }
+            />
+
+            <CategoryField
+              icon={<FaCalendarAlt className="text-green-600" />}
+              label="Created At"
+              value={new Date(categoryData.createdAt).toLocaleDateString()}
+            />
+
+            {editMode && (
+              <CategoryField
+                icon={<FaImage className="text-indigo-600" />}
+                label="New Image"
+                value={
+                  <ModernFileInput
+                    onFileSelect={(file) => setNewCategoryImage(file)}
+                  />
+                }
+              />
+            )}
+          </div>
+
+          <div className="mt-6 text-center flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() =>
+                editMode ? handleUpdateCategory() : setEditMode(true)
+              }
+              className="primaryBtn w-fit px-4 flex items-center gap-2 rounded-full"
+            >
+              <MdEdit /> {editMode ? "Save" : "Update"}
+            </button>
+
             <Link
               to="/all-categories"
-              className="flex items-center px-3 py-1 bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-500 text-white font-semibold rounded-md shadow hover:opacity-90 transition-opacity text-sm"
+              className="secondaryBtn w-fit px-4 rounded-full"
             >
-              All Categories
+              Back to All Categories
             </Link>
           </div>
         </div>
-
-        <div className="mt-6 flex flex-col sm:flex-row items-start">
-          <div className="w-full shadow rounded lg:p-5 sm:p-0">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {categoryData.category_name} Category Details
-            </h3>
-
-            <div className="mt-6 border-t border-gray-100">
-              <dl className="divide-y divide-gray-100">
-                {/* Category Name */}
-                <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="flex items-center text-sm font-medium leading-6 text-gray-900">
-                    <FaUser className="text-indigo-600 mr-2" /> Category Name
-                  </dt>
-                  <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0 flex items-center gap-2">
-                    {editMode ? (
-                      <input
-                        type="text"
-                        value={updatedCategoryName}
-                        onChange={(e) => setUpdatedCategoryName(e.target.value)}
-                        className="border px-2 py-1 rounded"
-                      />
-                    ) : (
-                      categoryData.category_name
-                    )}
-                    <button
-                      onClick={() =>
-                        editMode ? handleUpdateCategory() : setEditMode(true)
-                      }
-                      className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition"
-                    >
-                      {editMode ? "Save" : <FaEdit />}
-                    </button>
-                  </dd>
-                </div>
-
-                {/* Creation Date */}
-                <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="flex items-center text-sm font-medium leading-6 text-gray-900">
-                    Created At
-                  </dt>
-                  <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-                    {new Date(categoryData.createdAt).toLocaleDateString()}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-        </div>
       </div>
+    </motion.div>
+  );
+}
+
+function CategoryField({ icon, label, value }) {
+  return (
+    <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 px-2 sm:px-4">
+      <dt className="flex items-center text-sm font-medium text-gray-700 gap-2">
+        {icon} {label}
+      </dt>
+      <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+        {value}
+      </dd>
     </div>
   );
 }

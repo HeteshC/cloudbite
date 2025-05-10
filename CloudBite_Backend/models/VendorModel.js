@@ -17,17 +17,17 @@ const vendorSchema = new mongoose.Schema({
     zip_code: { type: String, required: true },
     country: { type: String, required: true },
   },
-  // Product inventory
-  products: [
-    {
-      product: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
-        required: true,
-      },
-      quantity: { type: Number, required: true }, // Quantity specific to this outlet
-    },
-  ],
+    // Product inventory
+    products: [
+        {
+          product: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true,
+          },
+          quantity: { type: Number, required: true }, // Quantity specific to this outlet
+        },
+      ],
   company_name: { type: String, required: true },
   company_registration_number: {
     type: String,

@@ -1,96 +1,73 @@
 const express = require("express");
 const router = express.Router();
-const {
-  productUpload,
-  addProduct,
-  updateProductVolumes,
-  getAllAddedProducts,
-  getProductById,
-  updateProduct,
-  deleteProduct,
-  updateStock,
-  updateProductAdditionalImages,
-  deleteProductAdditionalImage,
-  countAllProducts,
-  getLowStockProducts,
-  updateProductImage,
-  getProductsByCategory,
-  getProductsByOutlet,
-  decreaseStock,
-  getRemainingStock,
-  addProductToOutlet, // Added new function
-  getAllProductNames,
-  getProductPurchaseHistory,
-  getRandomProducts,
-} = require("../controllers/ProductController");
+const ProductController = require("../controllers/ProductController");
 
-// Route to add a new product
+// Multer upload configuration
+const { productUpload } = ProductController;
+
+// ========== CREATE ==========
 router.post(
   "/add-product",
   productUpload.fields([
     { name: "product_image", maxCount: 1 },
-    { name: "all_product_images", maxCount: 5 },
+    { name: "all_product_images", maxCount: 10 },
   ]),
-  addProduct
+  ProductController.createProduct
 );
 
-// Route to link a product to an outlet
-router.post("/add-product-to-outlet/:outletId", addProductToOutlet);
+// ========== READ ==========
+router.get("/all-added-products", ProductController.getAllProducts);
+router.get(
+  "/get-single-added-product-by-id/:id",
+  ProductController.getProductById
+);
+router.get(
+  "/get-products-by-category/:categoryId",
+  ProductController.getProductsByCategory
+);
+router.get(
+  "/get-products-by-subcategory/:subCategoryId",
+  ProductController.getProductsBySubCategory
+);
+router.get("/get-products-sorted", ProductController.getProductsSorted);
 
-// Route to update the main product image
+// ========== UPDATE ==========
 router.put(
-  "/update-product-image/:id",
-  productUpload.single("product_image"),
-  updateProductImage
+  "/update-product/:id",
+  productUpload.fields([
+    { name: "product_image", maxCount: 1 },
+    { name: "all_product_images", maxCount: 10 },
+  ]),
+  ProductController.updateProductById
 );
 
-// Route to get all added products
-router.get("/all-added-products", getAllAddedProducts);
+// ========== DELETE ==========
+router.delete("/delete-product/:id", ProductController.deleteProductById);
 
-// Route to get a single product by ID
-router.get("/single-product/:id", getProductById);
-
-// Route to update a product by ID
-router.put("/update-product/:id", updateProduct);
-
-// Route to delete a product by ID
-router.delete("/delete-product/:id", deleteProduct);
-
-// Route to update stock for a product
-router.put("/update-stock/:id", updateStock);
-
-// Route to add additional product images
-router.put(
-  "/product/add-images/:id",
-  productUpload.array("all_product_images", 5),
-  updateProductAdditionalImages
+// ========== COUNTS ==========
+router.get("/count-all-products", ProductController.countAllProducts);
+router.get(
+  "/count-products-by-category",
+  ProductController.countProductsByCategory
+);
+router.get(
+  "/count-products-by-subcategory",
+  ProductController.countProductsBySubCategory
+);
+router.get(
+  "/count-products-by-vendor",
+  ProductController.countProductsByVendor
+);
+router.get(
+  "/count-products-by-status",
+  ProductController.countProductsByStatus
+);
+router.get(
+  "/count-products-by-section",
+  ProductController.countProductsBySection
 );
 
-// Route to delete a specific additional product image
-router.delete("/product/delete-image/:id/:index", deleteProductAdditionalImage);
-
-// Route to count all products
-router.get("/count-products", countAllProducts);
-
-// Route to fetch low stock products
-router.get("/low-stock", getLowStockProducts); // Query param: ?threshold=20
-
-// Route to fetch products by category
-router.get("/products-by-category/:id", getProductsByCategory);
-
-// Route to fetch products by outlet
-router.get("/products-by-outlet/:outletId", getProductsByOutlet);
-
-// Route to decrease stock when an order is confirmed
-router.put("/decrease-stock", decreaseStock);
-
-// Route to fetch remaining stock for a product
-router.get("/remaining-stock/:id", getRemainingStock);
-
-router.get("/get-product-names", getAllProductNames);
-
-router.get("/get-product-purchase-history", getProductPurchaseHistory);
-// route to get some random products.
-router.get("/get-random-products/:count", getRandomProducts);
+// === New Search Route ===
+router.get("/search-products", ProductController.searchProducts);
 
 module.exports = router;

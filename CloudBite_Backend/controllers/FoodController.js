@@ -1,90 +1,177 @@
-const Food = require("../models/foodModel");
-const mongoose = require("mongoose");
+const Food = require("../models/FoodModel");
 const multer = require("multer");
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
 
-// Set storage engine for multer
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, "../uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
+const foodUploadDir = path.join("uploads", "food_images");
+
+if (!fs.existsSync(foodUploadDir)) {
+  fs.mkdirSync(foodUploadDir, { recursive: true });
+}
+
+const foodStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, foodUploadDir);
   },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + path.extname(file.originalname);
-    cb(null, uniqueName);
+  filename: (req, file, cb) => {
+    const filename = `${file.fieldname}-${Date.now()}${path.extname(
+      file.originalname
+    )}`;
+    cb(null, filename);
   },
 });
 
-const upload = multer({ storage: storage });
+const foodUpload = multer({ storage: foodStorage });
+exports.foodUpload = foodUpload;
 
-// Add new food item
-const addFood = async (req, res) => {
+exports.addFood = async (req, res) => {
   try {
-    const { name, description, price, category } = req.body;
-
-    if (!req.file) {
-      console.log("No image file uploaded.");
-      return res.status(400).json({ message: "Image file is required." });
-    }
-
-    const image = req.file.filename;
-
-    if (!name || !description || !price || !category) {
-      console.log("Missing required fields.");
-      return res.status(400).json({ message: "All fields are required." });
-    }
-
-    const newFood = new Food({
+    const {
       name,
       description,
       price,
-      image,
       category,
+      subcategory,
+      stock,
+      sku,
+      kitchen,
+    } = req.body;
+
+    const product_image = req.file?.path.replace(/\\/g, "/") || "";
+
+    // Validate required fields
+    if (!name || !description || !price || !stock || !sku || !kitchen) {
+      return res.status(400).json({ message: "All required fields must be provided." });
+    }
+
+    const newFood = new Food({
+      product_name: name,
+      description,
+      selling_price: price,
+      category,
+      subcategory,
+      stock,
+      sku,
+      kitchen,
+      product_image,
     });
 
-    await newFood.save();
-    console.log("Food item added successfully!");
-    res.status(201).json({ message: "Food item added successfully!", food: newFood });
+    const savedFood = await newFood.save();
+    res.status(201).json({ message: "Food item added successfully!", food: savedFood });
   } catch (error) {
-    console.error("Error adding food:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Add Food Error:", error);
+    res.status(500).json({ message: "Failed to add food item.", error });
   }
 };
 
-// Get all food items
-const listFood = async (req, res) => {
+exports.getAllFoods = async (req, res) => {
   try {
-    const foods = await Food.find();
-    console.log("Fetched all food items.");
-    res.status(200).json({ message: "Food items fetched successfully!", data: foods });
+    const foods = await Food.find({ isDeleted: false })
+      .populate("category")
+      .populate("subcategory")
+      .populate("vendor");
+    res.status(200).json(foods);
   } catch (error) {
-    console.error("Error fetching food items:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Get All Foods Error:", error);
+    res.status(500).json({ message: "Failed to fetch foods." });
   }
 };
 
-// Remove food item
-const removeFood = async (req, res) => {
-  const { id } = req.params;
+exports.getFoodById = async (req, res) => {
   try {
-    const deletedFood = await Food.findByIdAndDelete(id); // ✅ Fixed here
-    if (!deletedFood) {
-      return res.status(404).json({ message: "Food item not found" });
+    const food = await Food.findById(req.params.id)
+      .populate("category")
+      .populate("subcategory")
+      .populate("vendor");
+
+    if (!food || food.isDeleted) {
+      return res.status(404).json({ message: "Food not found." });
     }
-    res.status(200).json({ message: "Food item deleted successfully" });
+
+    res.status(200).json(food);
   } catch (error) {
-    console.error("Error deleting food:", error);
-    res.status(500).json({ message: "Failed to delete food item" });
+    console.error("Get Food By ID Error:", error);
+    res.status(500).json({ message: "Failed to fetch food." });
   }
 };
 
-module.exports = {
-  addFood,
-  upload,
-  listFood,
-  removeFood,
+exports.updateFoodById = async (req, res) => {
+  try {
+    const updatedFields = { ...req.body };
+
+    if (req.files) {
+      if (req.files["product_image"] && req.files["product_image"][0]) {
+        updatedFields.product_image = req.files[
+          "product_image"
+        ][0].path.replace(/\\/g, "/");
+      }
+
+      if (req.files["all_product_images"]) {
+        updatedFields.all_product_images = req.files["all_product_images"].map(
+          (file) => file.path.replace(/\\/g, "/")
+        );
+      }
+    }
+
+    const updatedFood = await Food.findByIdAndUpdate(
+      req.params.id,
+      updatedFields,
+      { new: true }
+    );
+
+    if (!updatedFood) {
+      return res.status(404).json({ message: "Food not found." });
+    }
+
+    res.status(200).json(updatedFood);
+  } catch (error) {
+    console.error("Update Food Error:", error);
+    res.status(500).json({ message: "Failed to update food." });
+  }
 };
+
+exports.deleteFoodById = async (req, res) => {
+  try {
+    const deletedFood = await Food.findByIdAndUpdate(
+      req.params.id,
+      { isDeleted: true, updatedAt: Date.now() },
+      { new: true }
+    );
+
+    if (!deletedFood) {
+      return res.status(404).json({ message: "Food not found." });
+    }
+
+    res.status(200).json({ message: "Food deleted." });
+  } catch (error) {
+    console.error("Delete Food Error:", error);
+    res.status(500).json({ message: "Failed to delete food." });
+  }
+};
+
+exports.searchFoods = async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query) {
+      return res.status(400).json({ message: "Search query is required" });
+    }
+
+    const foods = await Food.find({
+      isDeleted: false,
+      $or: [
+        { product_name: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+        { tags: { $regex: query, $options: "i" } },
+        { meta_title: { $regex: query, $options: "i" } },
+        { meta_description: { $regex: query, $options: "i" } },
+      ],
+    }).populate("category subcategory vendor");
+
+    res.status(200).json(foods);
+  } catch (error) {
+    console.error("Search Foods Error:", error);
+    res.status(500).json({ message: "Failed to search foods." });
+  }
+};
+

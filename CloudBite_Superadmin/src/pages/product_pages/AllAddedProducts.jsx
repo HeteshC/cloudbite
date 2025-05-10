@@ -1,50 +1,99 @@
-import React, { useState, useEffect } from "react";
-import { FaThList, FaThLarge, FaTh, FaSearch } from "react-icons/fa";
+
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import backendGlobalRoute from "../../config/config";
+import {
+  FaThList,
+  FaThLarge,
+  FaTh,
+  FaTrash,
+  FaRupeeSign,
+} from "react-icons/fa";
+import { toast } from "react-toastify";
+import globalBackendRoute from "../../config/Config";
+import SearchBar from "../../components/common_components/SearchBar";
+import stopwords from "../../components/common_components/stopwords";
 
-export default function AllAddedProducts() {
+const AllAddedProducts = () => {
   const [products, setProducts] = useState([]);
   const [view, setView] = useState("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get(
-          `${backendGlobalRoute}/api/all-added-products`
+        const res = await axios.get(
+          `${globalBackendRoute}/api/all-added-products`
         );
-        setProducts(response.data); // Update state with fetched products
+        setProducts(res.data);
+        setTotalCount(res.data.length);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching products:", error.message);
+        toast.error("Failed to fetch products.");
       }
     };
     fetchProducts();
-  }, []); // Fetch products when the component mounts
+  }, []);
 
-  // Get correct image URL from backend
-  const getImageUrl = (imageUrl) => {
-    if (imageUrl) {
-      const normalizedPath = imageUrl
-        .replace(/\\/g, "/")
-        .split("uploads/")
-        .pop(); // Normalize path
-      return `${backendGlobalRoute}/uploads/${normalizedPath}`; // Adjust according to folder structure
+  const getImageUrl = (img) => {
+    if (img) {
+      const normalized = img.replace(/\\/g, "/").split("/").pop();
+      return `${globalBackendRoute}/uploads/products/${normalized}`;
     }
-    return "https://via.placeholder.com/150"; // Default placeholder if no image
+    return "https://via.placeholder.com/150";
   };
 
+  const handleImageError = (e) => {
+    if (!e.target.dataset.fallback) {
+      e.target.src = "https://via.placeholder.com/150";
+      e.target.dataset.fallback = "true";
+    }
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    const confirm = window.confirm(
+      "Are you sure you want to delete this product?"
+    );
+    if (!confirm) return;
+
+    try {
+      const res = await axios.delete(
+        `${globalBackendRoute}/api/delete-product/${productId}`
+      );
+      if (res.status === 200) {
+        setProducts((prev) => prev.filter((p) => p._id !== productId));
+        toast.success("Product deleted successfully.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete product.");
+    }
+  };
+
+  const filteredProducts = searchQuery.trim()
+    ? products.filter((product) => {
+        const fullText =
+          `${product.product_name} ${product.sku} ${product.brand}`.toLowerCase();
+        const queryWords = searchQuery
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((word) => word && !stopwords.includes(word));
+        return queryWords.some((word) => fullText.includes(word));
+      })
+    : products;
+
   return (
-    <div className="bg-white py-16 sm:py-20">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="flex justify-between items-center flex-wrap">
-          <div>
-            <h2 className="text-left text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-              All Products
-            </h2>
-          </div>
-          <div className="flex items-center space-x-4 flex-wrap">
+    <div className="fullWidth py-10">
+      <div className="containerWidth">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <h2 className="headingText">
+            All Products
+            <span className="text-sm text-gray-500 ml-2">
+              Showing {filteredProducts.length} of {totalCount}
+            </span>
+          </h2>
+          <div className="flex items-center flex-wrap gap-4">
             <FaThList
               className={`text-xl cursor-pointer ${
                 view === "list" ? "text-indigo-600" : "text-gray-600"
@@ -63,115 +112,108 @@ export default function AllAddedProducts() {
               }`}
               onClick={() => setView("grid")}
             />
-            <div className="relative">
-              <FaSearch className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                className="pl-10 pr-4 py-2 border rounded-md focus:outline-none"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Link to="/add-product">
-              <button className="ml-4 bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow hover:opacity-90 transition-opacity">
-                Add Product
-              </button>
-            </Link>
+            <SearchBar
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search products..."
+            />
           </div>
         </div>
-        <div className="mt-10">
-          {view === "grid" && (
+
+        <div className="mt-6">
+          {filteredProducts.length === 0 ? (
+            <p className="text-center text-gray-500">No products found.</p>
+          ) : view === "grid" ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {products
-                .filter((product) =>
-                  [product.product_name]
-                    .map((field) => field.toLowerCase())
-                    .some((field) => field.includes(searchQuery.toLowerCase()))
-                )
-                .map((product) => (
-                  <Link
-                    to={`/single-added-product/${product._id}`}
-                    key={product._id}
-                    className="flex flex-col items-start relative"
+              {filteredProducts.map((product) => (
+                <Link
+                  key={product._id}
+                  to={`/single-added-product/${product._id}`}
+                  className="relative flex flex-col items-start bg-white shadow rounded-lg overflow-hidden"
+                >
+                  <img
+                    src={getImageUrl(product.product_image)}
+                    alt={product.product_name}
+                    onError={handleImageError}
+                    className="w-full h-48 object-cover"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDeleteProduct(product._id);
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow hover:bg-red-600"
                   >
-                    <img
-                      src={getImageUrl(product.product_image)}
-                      alt={product.product_name}
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <h3 className="mt-2 text-md font-semibold text-gray-900 text-left">
+                    <FaTrash />
+                  </button>
+                  <div className="p-3 space-y-1">
+                    <h3 className="subHeadingTextMobile">
                       {product.product_name}
                     </h3>
-                    <p className="text-gray-500">
-                      Lowest Price: ₹{product.lowestPrice.toFixed(2)}
-                    </p>
-                  </Link>
-                ))}
-            </div>
-          )}
-          {view === "card" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products
-                .filter((product) =>
-                  [product.product_name]
-                    .map((field) => field.toLowerCase())
-                    .some((field) => field.includes(searchQuery.toLowerCase()))
-                )
-                .map((product) => (
-                  <Link
-                    to={`/single-added-product/${product._id}`}
-                    key={product._id}
-                    className="flex flex-col items-start bg-white rounded-lg shadow relative"
-                  >
-                    <img
-                      src={getImageUrl(product.product_image)}
-                      alt={product.product_name}
-                      className="w-full h-96 object-cover rounded-lg"
-                    />
-                    <h3 className="mt-4 text-lg font-semibold text-gray-900 text-left">
-                      {product.product_name}
-                    </h3>
-                    <p className="text-gray-500">
-                      Lowest Price: ₹{product.lowestPrice.toFixed(2)}
-                    </p>
-                  </Link>
-                ))}
-            </div>
-          )}
-          {view === "list" && (
-            <div className="space-y-6">
-              {products
-                .filter((product) =>
-                  [product.product_name]
-                    .map((field) => field.toLowerCase())
-                    .some((field) => field.includes(searchQuery.toLowerCase()))
-                )
-                .map((product) => (
-                  <Link
-                    to={`/single-added-product/${product._id}`}
-                    key={product._id}
-                    className="flex items-center space-x-4 bg-white rounded-lg shadow relative"
-                  >
-                    <img
-                      src={getImageUrl(product.product_image)}
-                      alt={product.product_name}
-                      className="w-24 h-24 object-cover rounded-lg"
-                    />
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 text-left">
-                        {product.product_name}
-                      </h3>
-                      <p className="text-gray-500">
-                        Lowest Price: ₹{product.lowestPrice.toFixed(2)}
-                      </p>
+                    <p className="paragraphTextMobile">{product.sku}</p>
+                    <p className="paragraphTextMobile">{product.brand}</p>
+                    <div className="flex items-center gap-2 text-sm mt-2">
+                      {product.display_price && (
+                        <span className="line-through text-gray-400 flex items-center">
+                          <FaRupeeSign /> {product.display_price}
+                        </span>
+                      )}
+                      <span className="font-bold text-green-600 flex items-center">
+                        <FaRupeeSign /> {product.selling_price}
+                      </span>
                     </div>
-                  </Link>
-                ))}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredProducts.map((product) => (
+                <Link
+                  key={product._id}
+                  to={`/single-added-product/${product._id}`}
+                  className="flex items-center space-x-4 bg-white rounded-lg shadow p-3 relative"
+                >
+                  <img
+                    src={getImageUrl(product.product_image)}
+                    alt={product.product_name}
+                    onError={handleImageError}
+                    className="w-20 h-20 object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDeleteProduct(product._id);
+                    }}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow hover:bg-red-600"
+                  >
+                    <FaTrash />
+                  </button>
+                  <div>
+                    <h3 className="subHeadingTextMobile">
+                      {product.product_name}
+                    </h3>
+                    <p className="paragraphTextMobile">{product.sku}</p>
+                    <p className="paragraphTextMobile">{product.brand}</p>
+                    <div className="flex items-center gap-2 text-sm mt-2">
+                      {product.display_price && (
+                        <span className="line-through text-gray-400 flex items-center">
+                          <FaRupeeSign /> {product.display_price}
+                        </span>
+                      )}
+                      <span className="font-bold text-green-600 flex items-center">
+                        <FaRupeeSign /> {product.selling_price}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
           )}
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default AllAddedProducts;

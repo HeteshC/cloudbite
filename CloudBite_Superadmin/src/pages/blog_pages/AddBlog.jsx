@@ -1,246 +1,195 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import backendGlobalRoute from "../../config/config";
+import { jwtDecode } from "jwt-decode";
+import globalBackendRoute from "../../config/Config";
 
 export default function AddBlog() {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [author, setAuthor] = useState(""); // The ObjectId of the author
-  const [summary, setSummary] = useState("");
-  const [tags, setTags] = useState("");
-  const [category, setCategory] = useState("");
-  const [seoTitle, setSeoTitle] = useState("");
-  const [metaDescription, setMetaDescription] = useState("");
-  const [published, setPublished] = useState(false);
-  const [featuredImage, setFeaturedImage] = useState(null);
-  const [message, setMessage] = useState("");
 
+  const initialFormData = {
+    title: "",
+    body: "",
+    summary: "",
+    tags: "",
+    category: "",
+    seoTitle: "",
+    metaDescription: "",
+    published: false,
+    featuredImage: null,
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+  const [authorId, setAuthorId] = useState("");
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Unauthorized: Login required.");
+      return;
+    }
 
     try {
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user && user.id && user.id.length === 24) {
-          setAuthor(user.id);
-        } else {
-          console.error("Invalid user ID: ", user);
-          setAuthor(null);
-        }
-      } else {
-        console.error("No user found in localStorage.");
-        setAuthor(null);
-      }
+      const decoded = jwtDecode(token);
+      setAuthorId(decoded.id);
     } catch (error) {
-      console.error("Error parsing user from localStorage:", error);
-      setAuthor(null);
+      console.error("Invalid token format");
     }
   }, []);
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
   const handleImageChange = (e) => {
-    setFeaturedImage(e.target.files[0]);
+    setFormData((prev) => ({
+      ...prev,
+      featuredImage: e.target.files[0],
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const blogForm = new FormData();
 
-    // Validate author before submitting
-    if (!author || author.length !== 24) {
-      setMessage("Invalid author ID. Please log in again.");
-      console.error("Invalid author ID:", author);
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("body", body);
-    formData.append("author", author); // Ensure this is a valid ObjectId
-    formData.append("summary", summary);
-    formData.append("tags", tags);
-    formData.append("category", category);
-    formData.append("seoTitle", seoTitle);
-    formData.append("metaDescription", metaDescription);
-    formData.append("published", published);
-    if (featuredImage) {
-      formData.append("featuredImage", featuredImage);
+    blogForm.append("title", formData.title);
+    blogForm.append("body", formData.body);
+    blogForm.append("summary", formData.summary);
+    blogForm.append("tags", formData.tags);
+    blogForm.append("category", formData.category);
+    blogForm.append("seoTitle", formData.seoTitle);
+    blogForm.append("metaDescription", formData.metaDescription);
+    blogForm.append("published", formData.published);
+    blogForm.append("author", authorId);
+    if (formData.featuredImage) {
+      blogForm.append("featuredImage", formData.featuredImage);
     }
 
     try {
-      const response = await axios.post(
-        `${backendGlobalRoute}/api/add-blog`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-      setMessage("Blog added successfully!");
-      setTitle("");
-      setBody("");
-      setSummary("");
-      setTags("");
-      setCategory("");
-      setSeoTitle("");
-      setMetaDescription("");
-      setPublished(false);
-      setFeaturedImage(null);
-      alert("New Blog added successfully.");
+      await axios.post(`${globalBackendRoute}/api/add-blog`, blogForm, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      alert("✅ Blog added successfully!");
+      setFormData(initialFormData);
+      navigate("/add-blog", { replace: true });
     } catch (error) {
-      console.error("There was an error adding the blog!", error);
-      setMessage("Error adding blog. Please try again.");
+      console.error("Error adding blog:", error);
+      alert("❌ Failed to add blog. Please try again.");
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Add New Blog</h2>
-      {message && <p className="text-green-500">{message}</p>}
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="title"
-          >
-            Title
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="w-full px-3 py-2 border rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="body"
-          >
-            Body
-          </label>
-          <textarea
-            id="body"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            required
-            className="w-full px-3 py-2 border rounded"
-            rows="5"
-          ></textarea>
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="summary"
-          >
-            Summary
-          </label>
-          <textarea
-            id="summary"
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            rows="2"
-          ></textarea>
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="tags"
-          >
-            Tags (comma-separated)
-          </label>
-          <input
-            id="tags"
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="category"
-          >
-            Category
-          </label>
-          <input
-            id="category"
-            type="text"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="seoTitle"
-          >
-            SEO Title
-          </label>
-          <input
-            id="seoTitle"
-            type="text"
-            value={seoTitle}
-            onChange={(e) => setSeoTitle(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="metaDescription"
-          >
-            Meta Description
-          </label>
-          <textarea
-            id="metaDescription"
-            value={metaDescription}
-            onChange={(e) => setMetaDescription(e.target.value)}
-            className="w-full px-3 py-2 border rounded"
-            rows="2"
-          ></textarea>
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
+    <div className="containerWidth my-8">
+      <div className="bg-white shadow-md rounded-xl p-6 sm:p-8 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+          📢 Add New Blog
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {[
+            { label: "Title", name: "title", type: "text" },
+            { label: "SEO Title", name: "seoTitle", type: "text" },
+            { label: "Tags (comma-separated)", name: "tags", type: "text" },
+            { label: "Category", name: "category", type: "text" },
+          ].map(({ label, name, type }) => (
+            <div key={name}>
+              <label htmlFor={name} className="formLabel">
+                {label}
+              </label>
+              <input
+                type={type}
+                name={name}
+                value={formData[name]}
+                onChange={handleChange}
+                className="formInput"
+                required={name === "title"}
+              />
+            </div>
+          ))}
+
+          <div>
+            <label className="formLabel" htmlFor="body">
+              Body
+            </label>
+            <textarea
+              id="body"
+              name="body"
+              rows="5"
+              value={formData.body}
+              onChange={handleChange}
+              className="formInput"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="formLabel" htmlFor="summary">
+              Summary
+            </label>
+            <textarea
+              id="summary"
+              name="summary"
+              rows="2"
+              value={formData.summary}
+              onChange={handleChange}
+              className="formInput"
+            />
+          </div>
+
+          <div>
+            <label className="formLabel" htmlFor="metaDescription">
+              Meta Description
+            </label>
+            <textarea
+              id="metaDescription"
+              name="metaDescription"
+              rows="2"
+              value={formData.metaDescription}
+              onChange={handleChange}
+              className="formInput"
+            />
+          </div>
+
+          <div className="flex items-center">
             <input
               type="checkbox"
-              checked={published}
-              onChange={(e) => setPublished(e.target.checked)}
+              id="published"
+              name="published"
+              checked={formData.published}
+              onChange={handleChange}
               className="mr-2"
             />
-            Publish
-          </label>
-        </div>
-        <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="featuredImage"
-          >
-            Featured Image
-          </label>
-          <input
-            id="featuredImage"
-            type="file"
-            onChange={handleImageChange}
-            className="w-full px-3 py-2 border rounded"
-          />
-        </div>
-        <div className="mb-4">
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
-          >
-            Add Blog
-          </button>
-        </div>
-      </form>
+            <label htmlFor="published" className="text-sm text-gray-700">
+              Publish Blog
+            </label>
+          </div>
+
+          <div>
+            <label className="formLabel" htmlFor="featuredImage">
+              Featured Image
+            </label>
+            <input
+              type="file"
+              id="featuredImage"
+              onChange={handleImageChange}
+              className="w-full mt-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"
+            />
+          </div>
+
+          <div className="text-center pt-4">
+            <button
+              type="submit"
+              className="primaryBtn px-6 py-2 rounded-lg w-full sm:w-1/2 mx-auto"
+            >
+              Submit Blog
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
