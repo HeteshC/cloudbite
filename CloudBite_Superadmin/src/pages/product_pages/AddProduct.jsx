@@ -1,495 +1,354 @@
-import React, { useState, useEffect } from "react";
+import globalBackendRoute from "../../config/config";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { MdDelete } from "react-icons/md";
-import { IoIosAddCircle } from "react-icons/io";
-import backendGlobalRoute from "../../config/config";
+import { useNavigate } from "react-router-dom";
+import ModernTextInput from "../../components/common_components/MordernTextInput";
 
 export default function AddProduct() {
-  const [productName, setProductName] = useState("");
-  const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [outletId, setOutletId] = useState("");
-  const [categories, setCategories] = useState([]);
-  const [outlets, setOutlets] = useState([]);
-  const [vendors, setVendors] = useState([]); // New state for vendors
-  const [vendorId, setVendorId] = useState(""); // Selected vendor ID
-  const [stock, setStock] = useState("");
-  const [brand, setBrand] = useState("");
-  const [SKU, setSKU] = useState("");
-  const [dimensions, setDimensions] = useState({
-    length: "",
-    width: "",
-    height: "",
+  const navigate = useNavigate();
+  const [productData, setProductData] = useState({
+    product_name: "",
+    slug: "",
+    description: "",
+    sku: "",
+    selling_price: "",
+    display_price: "",
+    brand: "",
+    barcode: "",
+    stock: 0,
+    color: "",
+    material: "",
+    tags: "",
+    category: "",
+    subcategory: "",
+    vendor: "",
+    outlet: "",
   });
-  const [color, setColor] = useState("");
-  const [material, setMaterial] = useState("");
-  const [tags, setTags] = useState("");
-  const [discount, setDiscount] = useState(0);
-  const [availabilityStatus, setAvailabilityStatus] = useState(true);
-  const [mainProductImage, setMainProductImage] = useState(null);
-  const [additionalProductImages, setAdditionalProductImages] = useState([]);
-  const [volumes, setVolumes] = useState([
-    { volume: "", sellingPrice: "", displayPrice: "" },
-  ]);
+  const [productImage, setProductImage] = useState(null);
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [subcategoriesAll, setSubcategoriesAll] = useState([]);
+  const [filteredSubcategories, setFilteredSubcategories] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [outlets, setOutlets] = useState([]);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const fetchCategoriesAndOutletsAndVendors = async () => {
+    const fetchData = async () => {
       try {
-        const categoryResponse = await axios.get(
-          `${backendGlobalRoute}/api/all-categories`
-        );
-        setCategories(categoryResponse.data);
-
-        const outletResponse = await axios.get(
-          `${backendGlobalRoute}/api/all-outlets`
-        );
-        setOutlets(outletResponse.data);
-
-        const vendorResponse = await axios.get(
-          `${backendGlobalRoute}/api/all-vendors`
-        );
-        setVendors(vendorResponse.data); // Set vendors in state
-
-        if (outletResponse.data.length > 0 && !outletId) {
-          setOutletId(outletResponse.data[0]._id);
-        }
-
-        if (vendorResponse.data.length > 0 && !vendorId) {
-          setVendorId(vendorResponse.data[0]._id);
-        }
+        const [catRes, subRes, venRes, outRes] = await Promise.all([
+          axios.get(`${globalBackendRoute}/api/all-categories`),
+          axios.get(`${globalBackendRoute}/api/all-subcategories`),
+          axios.get(`${globalBackendRoute}/api/all-vendors`),
+          axios.get(`${globalBackendRoute}/api/all-outlets`),
+        ]);
+        setCategories(catRes.data);
+        setSubcategoriesAll(subRes.data);
+        setVendors(venRes.data);
+        setOutlets(outRes.data);
       } catch (error) {
-        console.error("Error fetching categories, outlets, or vendors:", error);
+        console.error("Failed to fetch dropdown data:", error);
       }
     };
-    fetchCategoriesAndOutletsAndVendors();
-  }, [outletId, vendorId]);
+    fetchData();
+  }, []);
 
-  const handleMainImageChange = (e) => {
-    setMainProductImage(e.target.files[0]);
+  useEffect(() => {
+    if (productData.category) {
+      const filtered = subcategoriesAll.filter(
+        (sub) =>
+          String(sub.category?._id || sub.category) ===
+          String(productData.category)
+      );
+      setFilteredSubcategories(filtered);
+    } else {
+      setFilteredSubcategories([]);
+    }
+  }, [productData.category, subcategoriesAll]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === "product_name") {
+      const trimmed = value.trimStart();
+      setProductData({ ...productData, [name]: trimmed });
+    } else {
+      setProductData({ ...productData, [name]: value });
+    }
   };
 
-  const handleAdditionalImagesChange = (e) => {
-    setAdditionalProductImages([...e.target.files]);
-  };
-
-  const handleVolumeChange = (index, field, value) => {
-    const updatedVolumes = [...volumes];
-    updatedVolumes[index][field] = value;
-    setVolumes(updatedVolumes);
-  };
-
-  const addVolumeField = () => {
-    setVolumes([...volumes, { volume: "", sellingPrice: "" }]);
-  };
-
-  const removeVolumeField = (index) => {
-    const updatedVolumes = volumes.filter((_, i) => i !== index);
-    setVolumes(updatedVolumes);
+  const validateProductName = (name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return false;
+    if (/^[^a-zA-Z0-9]+$/.test(trimmed)) return false;
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("product_name", productName);
-    formData.append("description", description);
-    formData.append("category", categoryId);
-    formData.append("vendor", vendorId); // Add selected vendor
-    formData.append("stock", stock);
-    formData.append("brand", brand);
-    formData.append("SKU", SKU);
-    formData.append("dimensions", JSON.stringify(dimensions));
-    formData.append("color", color);
-    formData.append("material", material);
-    formData.append("tags", tags.split(","));
-    formData.append("discount", discount);
-    formData.append("availability_status", availabilityStatus);
 
-    const formattedVolumes = [
-      {
-        outlet: outletId,
-        products: volumes.map(({ volume, sellingPrice, displayPrice }) => ({
-          volume,
-          selling_price: sellingPrice,
-          display_price: displayPrice,
-        })),
-      },
-    ];
-    formData.append("outlet", JSON.stringify(formattedVolumes));
-
-    if (mainProductImage) {
-      formData.append("product_image", mainProductImage);
+    const nameValid = validateProductName(productData.product_name);
+    if (!nameValid) {
+      setMessage("Invalid product name.");
+      return;
     }
 
-    if (additionalProductImages.length > 0) {
-      additionalProductImages.forEach((image) => {
-        formData.append("all_product_images", image);
-      });
+    if (!productData.sku?.trim()) {
+      setMessage("SKU is required and must be unique.");
+      return;
+    }
+
+    if (!productData.selling_price || isNaN(productData.selling_price)) {
+      setMessage("Selling price is required and must be a valid number.");
+      return;
+    }
+
+    if (!productData.vendor || !productData.outlet) {
+      setMessage("Vendor and Outlet are required.");
+      return;
     }
 
     try {
-      await axios.post(`${backendGlobalRoute}/api/add-product`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+      const formData = new FormData();
+      Object.entries(productData).forEach(([key, val]) => {
+        // Don't send empty subcategory or category
+        if ((key === "subcategory" || key === "category") && !val) return;
+        formData.append(key, val);
       });
 
-      toast.success("Product added successfully!", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      if (productImage) formData.append("product_image", productImage);
+      galleryImages.forEach((file) =>
+        formData.append("all_product_images", file)
+      );
 
-      resetForm();
+      const res = await axios.post(
+        `${globalBackendRoute}/api/add-product`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      if (res.status === 201) {
+        alert("Product added successfully!");
+        navigate("/all-added-products");
+      } else {
+        throw new Error("Product not created");
+      }
     } catch (error) {
       console.error("Error adding product:", error);
-      toast.error("Error adding product. Please try again.", {
-        position: "top-center",
-        autoClose: 5000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+      const errorMsg =
+        error.response?.data?.message || "Failed to add product. Try again.";
+      setMessage(errorMsg);
     }
   };
 
-  const resetForm = () => {
-    setProductName("");
-    setDescription("");
-    setCategoryId("");
-    setVendorId(vendors.length > 0 ? vendors[0]._id : ""); // Reset vendor
-    setOutletId(outlets.length > 0 ? outlets[0]._id : "");
-    setStock("");
-    setBrand("");
-    setSKU("");
-    setDimensions({ length: "", width: "", height: "" });
-    setColor("");
-    setMaterial("");
-    setTags("");
-    setDiscount(0);
-    setAvailabilityStatus(true);
-    setMainProductImage(null);
-    setAdditionalProductImages([]);
-    setVolumes([{ volume: "", sellingPrice: "", displayPrice: "" }]);
-  };
-
   return (
-    <div className="max-w-6xl mx-auto py-12 px-4">
-      <ToastContainer />
-      <h2 className="text-3xl font-bold mb-6 text-center">Add New Product</h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Product Name
-          </label>
-          <input
-            type="text"
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
+    <div className="max-w-5xl mx-auto py-10 px-4">
+      <h2 className="text-3xl font-bold mb-6">Add New Product</h2>
+      {message && <p className="text-red-500 text-center">{message}</p>}
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        encType="multipart/form-data"
+      >
+        <ModernTextInput
+          label="Product Name *"
+          name="product_name"
+          placeholder="Enter product name"
+          value={productData.product_name}
+          onChange={handleChange}
+        />
 
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          ></textarea>
-        </div>
+        <ModernTextInput
+          label="Description *"
+          name="description"
+          placeholder="Enter full description of the product"
+          value={productData.description}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="SKU *"
+          name="sku"
+          placeholder="Enter SKU (must be unique)"
+          value={productData.sku}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="Slug (URL-friendly) *"
+          name="slug"
+          placeholder="example-product-slug"
+          value={productData.slug}
+          onChange={handleChange}
+        />
 
-        <div className="flex space-x-4">
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Category
+        <ModernTextInput
+          label="Selling Price *"
+          name="selling_price"
+          type="number"
+          placeholder="Enter selling price"
+          value={productData.selling_price}
+          onChange={handleChange}
+        />
+
+        <ModernTextInput
+          label="Display Price (Optional)"
+          name="display_price"
+          type="number"
+          placeholder="Enter original display price (optional)"
+          value={productData.display_price}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="Brand *"
+          name="brand"
+          placeholder="e.g., Apple, Samsung"
+          value={productData.brand}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="Barcode"
+          name="barcode"
+          placeholder="Enter barcode if available"
+          value={productData.barcode}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="Stock *"
+          name="stock"
+          type="number"
+          placeholder="Enter available stock quantity"
+          value={productData.stock}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="Color"
+          name="color"
+          placeholder="e.g., Black, Red, Silver"
+          value={productData.color}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="Material"
+          name="material"
+          placeholder="e.g., Plastic, Metal"
+          value={productData.material}
+          onChange={handleChange}
+        />
+        <ModernTextInput
+          label="Tags (comma separated)"
+          name="tags"
+          placeholder="e.g., phone, electronics, gadgets"
+          value={productData.tags}
+          onChange={handleChange}
+        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Category *
             </label>
             <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              name="category"
+              value={productData.category}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
             >
-              <option value="">Select Category</option>
-              {categories.map((category) => (
-                <option key={category._id} value={category._id}>
-                  {category.category_name}
+              <option value="">-- Select Category --</option>
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat._id}>
+                  {cat.category_name}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Outlet
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Subcategory
             </label>
             <select
-              value={outletId}
-              onChange={(e) => setOutletId(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              name="subcategory"
+              value={productData.subcategory}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
             >
-              <option value="">Select Outlet</option>
-              {outlets.map((outlet) => (
-                <option key={outlet._id} value={outlet._id}>
-                  {outlet.outlet_name || "Unnamed Outlet"}
+              <option value="">-- Select Subcategory --</option>
+              {filteredSubcategories.map((sub) => (
+                <option key={sub._id} value={sub._id}>
+                  {sub.subcategory_name}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Vendor
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Vendor *
             </label>
             <select
-              value={vendorId}
-              onChange={(e) => setVendorId(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              name="vendor"
+              value={productData.vendor}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
             >
-              <option value="">Select Vendor</option>
-              {vendors.map((vendor) => (
-                <option key={vendor._id} value={vendor._id}>
-                  {vendor.vendor_name || "Unnamed Vendor"}
+              <option value="">-- Select Vendor --</option>
+              {vendors.map((ven) => (
+                <option key={ven._id} value={ven._id}>
+                  {ven.vendor_name ||
+                    ven.name ||
+                    ven.email ||
+                    `Vendor ${ven._id}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Select Outlet
+            </label>
+            <select
+              name="outlet"
+              value={productData.outlet}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+            >
+              <option value="">-- Select Outlet --</option>
+              {outlets.map((out) => (
+                <option key={out._id} value={out._id}>
+                  {out.outlet_name || out.name || `Outlet ${out._id}`}
                 </option>
               ))}
             </select>
           </div>
         </div>
 
-        <div className="flex space-x-4">
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Stock
-            </label>
-            <input
-              type="number"
-              value={stock}
-              onChange={(e) => setStock(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Brand
-            </label>
-            <input
-              type="text"
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              SKU
-            </label>
-            <input
-              type="text"
-              value={SKU}
-              onChange={(e) => setSKU(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-        </div>
-
-        <div className="flex space-x-4">
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Color
-            </label>
-            <input
-              type="text"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Material
-            </label>
-            <input
-              type="text"
-              value={material}
-              onChange={(e) => setMaterial(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-          <div className="mb-4 w-1/3">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Tags/Keywords (comma separated)
-            </label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-        </div>
-
-        {/* Availability Status */}
-        <div className="flex space-x-4">
-          <div className="mb-4 w-1/2">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Availability Status
-            </label>
-            <select
-              value={availabilityStatus}
-              onChange={(e) => setAvailabilityStatus(e.target.value === "true")}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            >
-              <option value="true">Available</option>
-              <option value="false">Not Available</option>
-            </select>
-          </div>
-
-          <div className="mb-4 w-1/2">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Discount (%)
-            </label>
-            <input
-              type="number"
-              value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Dimensions (Length, Width, Height)
-          </label>
-          <div className="flex space-x-2">
-            <input
-              type="number"
-              placeholder="Length"
-              value={dimensions.length}
-              onChange={(e) =>
-                setDimensions({ ...dimensions, length: e.target.value })
-              }
-              className="w-1/3 px-4 py-2 border border-gray-300 rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Width"
-              value={dimensions.width}
-              onChange={(e) =>
-                setDimensions({ ...dimensions, width: e.target.value })
-              }
-              className="w-1/3 px-4 py-2 border border-gray-300 rounded-lg"
-            />
-            <input
-              type="number"
-              placeholder="Height"
-              value={dimensions.height}
-              onChange={(e) =>
-                setDimensions({ ...dimensions, height: e.target.value })
-              }
-              className="w-1/3 px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Main Product Image
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Main Product Image *
           </label>
           <input
             type="file"
-            onChange={handleMainImageChange}
-            required
-            className="w-full"
+            accept="image/*"
+            onChange={(e) => setProductImage(e.target.files[0])}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300"
           />
         </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Additional Product Images
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Gallery Images
           </label>
           <input
             type="file"
-            onChange={handleAdditionalImagesChange}
+            accept="image/*"
             multiple
-            className="w-full"
+            onChange={(e) => setGalleryImages([...e.target.files])}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border file:border-gray-300"
           />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Volumes, Selling Prices and Display Prices
-          </label>
-          {volumes.map((volume, index) => (
-            <div key={index} className="flex items-center space-x-4 mb-2">
-              <input
-                type="text"
-                placeholder="Volume (e.g., 1L)"
-                value={volume.volume}
-                onChange={(e) =>
-                  handleVolumeChange(index, "volume", e.target.value)
-                }
-                required
-                className="w-1/3 px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Selling Price"
-                value={volume.sellingPrice}
-                onChange={(e) =>
-                  handleVolumeChange(index, "sellingPrice", e.target.value)
-                }
-                required
-                className="w-1/3 px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <input
-                type="number"
-                placeholder="Display Price"
-                value={volume.displayPrice}
-                onChange={(e) =>
-                  handleVolumeChange(index, "displayPrice", e.target.value)
-                }
-                required
-                className="w-1/3 px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <button
-                type="button"
-                onClick={addVolumeField}
-                className="text-success"
-              >
-                <IoIosAddCircle className="w-6 h-6" />
-              </button>
-              <button
-                type="button"
-                onClick={() => removeVolumeField(index)}
-                className="text-danger"
-              >
-                <MdDelete className="w-6 h-6" />
-              </button>
-            </div>
-          ))}
         </div>
 
         <button
           type="submit"
-          className="bg-orange-700 hover:bg-orange-800 rounded-pill text-white font-bold py-2 px-4 rounded-lg"
+          className="w-full bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-500 text-white font-semibold py-2 px-4 rounded-lg shadow hover:opacity-90"
         >
           Add Product
         </button>

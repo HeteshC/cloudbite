@@ -13,8 +13,7 @@ import {
   FaSortAmountDown,
   FaSortAmountUp,
 } from "react-icons/fa";
-
-import backendGlobalRoute from "../../config/config";
+import globalBackendRoute from "../../config/Config";
 
 const itemsPerPage = 6;
 
@@ -31,7 +30,7 @@ export default function AllMessages() {
     const fetchMessages = async () => {
       try {
         const response = await axios.get(
-          `${backendGlobalRoute}/api/all-messages`
+          `${globalBackendRoute}/api/all-messages`
         );
         if (response.data && Array.isArray(response.data)) {
           setMessages(response.data);

@@ -9,8 +9,22 @@ import {
   FaCommentDots,
   FaUserCircle,
 } from "react-icons/fa";
-import backendGlobalRoute from "../../config/config";
-import { jwtDecode } from "jwt-decode";
+import globalBackendRoute from "../../config/Config";
+
+// Helper: decode JWT from localStorage
+const getLoggedInUser = () => {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+
+  try {
+    const payload = token.split(".")[1];
+    const decoded = JSON.parse(atob(payload));
+    return decoded;
+  } catch (err) {
+    console.error("Failed to decode token", err);
+    return null;
+  }
+};
 
 export default function ReplyMessage({ setUnreadMessagesCount = () => {} }) {
   const { id } = useParams();
@@ -18,15 +32,14 @@ export default function ReplyMessage({ setUnreadMessagesCount = () => {} }) {
   const [reply, setReply] = useState("");
   const [replies, setReplies] = useState([]);
 
-  // Fetch the message and its replies from the backend
   useEffect(() => {
     const fetchMessage = async () => {
       try {
         const response = await axios.get(
-          `${backendGlobalRoute}/api/reply-message/${id}`
+          `${globalBackendRoute}/api/reply-message/${id}`
         );
         setMessage(response.data);
-        setReplies(response.data.replies);
+        setReplies(response.data.replies || []);
       } catch (error) {
         console.error("Error fetching message:", error);
       }
@@ -36,47 +49,33 @@ export default function ReplyMessage({ setUnreadMessagesCount = () => {} }) {
   }, [id]);
 
   const handleReply = async () => {
-    if (reply.trim() === "") return; // Prevent empty replies
+    if (reply.trim() === "") return;
 
-    // Get token from localStorage
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("User authentication failed. Please log in again.");
+    const user = getLoggedInUser();
+
+    if (!user || user.role !== "superadmin") {
+      alert("You must be logged in as Superadmin to reply.");
       return;
     }
 
-    let decodedUser = {};
-
-    try {
-      decodedUser = jwtDecode(token) || {}; // Decode token safely
-    } catch (error) {
-      console.error("Error decoding token:", error);
-    }
-
     const newReply = {
-      name: decodedUser.name || "User", // Use "User" as default if name is missing
-      email: decodedUser.email || "No email available", // Safe fallback for email
+      name: user.name,
+      email: message.email,
       message: reply,
     };
 
     try {
-      // Post reply to backend, which also sends an email
       await axios.post(
-        `${backendGlobalRoute}/api/give-message-reply/${id}/reply`,
+        `${globalBackendRoute}/api/give-message-reply/${id}/reply`,
         newReply
       );
 
-      // Update replies in UI
       setReplies([
         ...replies,
         { ...newReply, timestamp: new Date().toLocaleString() },
       ]);
       setReply("");
-
-      // Reduce unread messages count
-      setUnreadMessagesCount((prevCount) => Math.max(prevCount - 1, 0));
-
-      // Success alert
+      setUnreadMessagesCount((prev) => Math.max(prev - 1, 0));
       alert("Reply has been sent via email successfully!");
     } catch (error) {
       console.error("Error sending reply:", error);

@@ -1,17 +1,39 @@
 const Category = require("../models/CategoryModel");
 const Product = require("../models/ProductModel");
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 
-// Controller function to add a new category
+const uploadDir = path.join("uploads", "category_images");
+
+// Ensure directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure Multer storage for category images
+const categoryStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const filename =
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname);
+    cb(null, filename);
+  },
+});
+
+const categoryUpload = multer({ storage: categoryStorage });
+
+// Add new category
 const addCategory = async (req, res) => {
   try {
     const { category_name } = req.body;
+    const category_image = req.file
+      ? path.join(uploadDir, req.file.filename).replace(/\\/g, "/")
+      : "";
 
-    // Create a new category
-    const newCategory = new Category({
-      category_name,
-    });
-
-    // Save to the database
+    const newCategory = new Category({ category_name, category_image });
     await newCategory.save();
 
     res.status(201).json({
@@ -19,74 +41,76 @@ const addCategory = async (req, res) => {
       category: newCategory,
     });
   } catch (error) {
-    console.error("Error adding Category:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error("Error adding category:", error);
+    res.status(500).json({ message: "Error adding category" });
   }
 };
 
-// Controller function to fetch all categories
+
+// Get all categories
+// ✅ FINAL getAllCategories
 const getAllCategories = async (req, res) => {
   try {
-    const categories = await Category.find(); // Fetch all categories
-    res.status(200).json(categories);
+    const categories = await Category.find({}, "category_name category_image");
+
+    const formattedCategories = categories.map((cat) => ({
+      _id: cat._id,
+      name: cat.category_name, // important for shop page, search, filters
+      category_name: cat.category_name, // important for display (safe fallback)
+      category_image: cat.category_image, // important for AllCategories page
+    }));
+
+    res.status(200).json(formattedCategories);
   } catch (error) {
     console.error("Error fetching categories:", error);
     res.status(500).json({ message: "Error fetching categories" });
   }
 };
 
-// Controller function to fetch a single category by ID
+
+
+// Get category by ID
 const getCategoryById = async (req, res) => {
   try {
     const category = await Category.findById(req.params.id);
-
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
-
     res.status(200).json(category);
   } catch (error) {
-    console.error("Error fetching single category:", error);
-    res.status(500).json({ message: "Error fetching single category." });
+    console.error("Error fetching category:", error);
+    res.status(500).json({ message: "Error fetching category" });
   }
 };
 
-// Controller function to delete a category
-const deleteCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Find the category to delete
-    const category = await Category.findById(id);
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-
-    // Delete the category from the database
-    await Category.findByIdAndDelete(id);
-
-    res.status(200).json({ message: "Category deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    res.status(500).json({ message: "Error deleting category" });
-  }
-};
-
-// Controller function to update a category by ID
+// Update category (with optional image update)
 const updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { category_name } = req.body;
 
-    const updatedCategory = await Category.findByIdAndUpdate(
-      id,
-      { category_name },
-      { new: true }
-    );
-
-    if (!updatedCategory) {
+    const category = await Category.findById(id);
+    if (!category) {
       return res.status(404).json({ message: "Category not found" });
     }
+
+    // Remove old image if new image is provided
+    if (req.file && category.category_image) {
+      const oldPath = path.join(__dirname, "..", category.category_image);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+
+    // Update category fields
+    category.category_name = category_name || category.category_name;
+    if (req.file) {
+      category.category_image = path
+        .join(uploadDir, req.file.filename)
+        .replace(/\\/g, "/");
+    }
+
+    const updatedCategory = await category.save();
 
     res.status(200).json({
       message: "Category updated successfully",
@@ -98,20 +122,45 @@ const updateCategory = async (req, res) => {
   }
 };
 
-// Controller function to get the total number of categories
-const getCategoryCount = async (req, res) => {
+// Delete category and image
+const deleteCategory = async (req, res) => {
   try {
-    // Count the total number of categories
-    const categoryCount = await Category.countDocuments();
+    const { id } = req.params;
+    const category = await Category.findById(id);
 
-    res.status(200).json({ categoryCount });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    // Delete image if it exists
+    if (category.category_image) {
+      const imagePath = path.join(__dirname, "..", category.category_image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    await Category.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Category deleted successfully" });
   } catch (error) {
-    console.error("Error fetching category count:", error);
-    res.status(500).json({ message: "Error fetching category count", error });
+    console.error("Error deleting category:", error);
+    res.status(500).json({ message: "Error deleting category" });
   }
 };
 
-// Controller function to get product counts for categories
+// Get total category count
+const getCategoryCount = async (req, res) => {
+  try {
+    const categoryCount = await Category.countDocuments();
+    res.status(200).json({ categoryCount });
+  } catch (error) {
+    console.error("Error counting categories:", error);
+    res.status(500).json({ message: "Error counting categories" });
+  }
+};
+
+// Get product count per category
 const getCategoryProductCounts = async (req, res) => {
   try {
     const categories = await Category.find();
@@ -133,16 +182,17 @@ const getCategoryProductCounts = async (req, res) => {
     res.status(200).json(counts);
   } catch (error) {
     console.error("Error fetching product counts:", error);
-    res.status(500).json({ message: "Error fetching product counts", error });
+    res.status(500).json({ message: "Error fetching product counts" });
   }
 };
 
 module.exports = {
+  categoryUpload,
   addCategory,
   getAllCategories,
   getCategoryById,
-  deleteCategory,
   updateCategory,
+  deleteCategory,
   getCategoryCount,
   getCategoryProductCounts,
 };

@@ -9,9 +9,8 @@ import {
   FaMoneyCheck,
 } from "react-icons/fa";
 import { MdSave } from "react-icons/md";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import backendGlobalRoute from "../../config/config";
+import { Link, useNavigate } from "react-router-dom";
+import globalBackendRoute from "../../config/Config";
 
 const AddVendor = () => {
   const navigate = useNavigate();
@@ -61,9 +60,8 @@ const AddVendor = () => {
     };
 
     try {
-      await axios.post(`${backendGlobalRoute}/api/add-vendor`, vendorData);
+      await axios.post(`${globalBackendRoute}/api/add-vendor`, vendorData);
       alert("Vendor added successfully!");
-
       setVendor({
         vendor_name: "",
         vendor_email: "",
@@ -87,149 +85,115 @@ const AddVendor = () => {
     }
   };
 
+  const renderInput = (label, name, icon, type = "text") => (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+      <label className="formLabel w-full sm:w-1/3 flex items-center">
+        {icon}
+        <span className="ml-2">{label}</span>
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={vendor[name]}
+        onChange={handleChange}
+        required
+        className="formInput w-full sm:w-2/3"
+        placeholder={`Enter ${label.toLowerCase()}`}
+      />
+    </div>
+  );
+
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-lg">
-        {/* Header with title and button */}
-        <div className="flex justify-between items-center">
-          <h2 className="text-left text-2xl font-bold leading-9 tracking-tight text-gray-900">
-            Add New Vendor
-          </h2>
+    <div className="bg-white py-10">
+      <div className="compactWidth">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <h2 className="headingText">Add New Vendor</h2>
           <Link to="/all-vendors">
-            <button className="bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-500 text-white font-semibold py-1 px-3 rounded-md shadow hover:opacity-90 transition-opacity text-sm">
+            <button className="fileUploadBtn text-sm py-1 px-3">
               View All Vendors
             </button>
           </Link>
         </div>
-      </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-lg">
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Vendor Name */}
-          <div className="flex items-center">
-            <label className="block text-sm font-medium leading-6 text-gray-900 flex items-center w-1/3">
-              <FaUser className="text-green-500 mr-2" /> Vendor Name
-            </label>
-            <input
-              type="text"
-              name="vendor_name"
-              value={vendor.vendor_name}
-              onChange={handleChange}
-              required
-              className="w-2/3 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              placeholder="Enter vendor name"
-            />
-          </div>
-
-          {/* Email */}
-          <div className="flex items-center">
-            <label className="block text-sm font-medium leading-6 text-gray-900 flex items-center w-1/3">
-              <FaEnvelope className="text-blue-500 mr-2" /> Email
-            </label>
-            <input
-              type="email"
-              name="vendor_email"
-              value={vendor.vendor_email}
-              onChange={handleChange}
-              required
-              className="w-2/3 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              placeholder="Enter vendor email"
-            />
-          </div>
-
-          {/* Phone */}
-          <div className="flex items-center">
-            <label className="block text-sm font-medium leading-6 text-gray-900 flex items-center w-1/3">
-              <FaPhone className="text-green-500 mr-2" /> Phone
-            </label>
-            <input
-              type="text"
-              name="vendor_phone"
-              value={vendor.vendor_phone}
-              onChange={handleChange}
-              required
-              className="w-2/3 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              placeholder="Enter vendor phone"
-            />
-          </div>
+          {renderInput(
+            "Vendor Name",
+            "vendor_name",
+            <FaUser className="text-green-500" />
+          )}
+          {renderInput(
+            "Email",
+            "vendor_email",
+            <FaEnvelope className="text-blue-500" />,
+            "email"
+          )}
+          {renderInput(
+            "Phone",
+            "vendor_phone",
+            <FaPhone className="text-green-500" />
+          )}
 
           {/* Address */}
-          {["street", "city", "state", "zip_code", "country"].map((field) => (
-            <div className="flex items-center" key={field}>
-              <label className="block text-sm font-medium leading-6 text-gray-900 flex items-center w-1/3">
-                <FaHome className="text-green-500 mr-2" />{" "}
-                {field.replace("_", " ").toUpperCase()}
-              </label>
-              <input
-                type="text"
-                name={field}
-                value={vendor[field]}
-                onChange={handleChange}
-                required
-                className="w-2/3 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                placeholder={`Enter ${field.replace("_", " ")}`}
-              />
-            </div>
-          ))}
+          {renderInput(
+            "Street",
+            "street",
+            <FaHome className="text-indigo-500" />
+          )}
+          {renderInput("City", "city", <FaHome className="text-indigo-500" />)}
+          {renderInput(
+            "State",
+            "state",
+            <FaHome className="text-indigo-500" />
+          )}
+          {renderInput(
+            "Zip Code",
+            "zip_code",
+            <FaHome className="text-indigo-500" />
+          )}
+          {renderInput(
+            "Country",
+            "country",
+            <FaHome className="text-indigo-500" />
+          )}
 
-          {/* Company Name */}
-          <div className="flex items-center">
-            <label className="block text-sm font-medium leading-6 text-gray-900 flex items-center w-1/3">
-              <FaBuilding className="text-blue-500 mr-2" /> Company Name
-            </label>
-            <input
-              type="text"
-              name="company_name"
-              value={vendor.company_name}
-              onChange={handleChange}
-              required
-              className="w-2/3 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              placeholder="Enter company name"
-            />
-          </div>
+          {/* Company */}
+          {renderInput(
+            "Company Name",
+            "company_name",
+            <FaBuilding className="text-blue-500" />
+          )}
+          {renderInput(
+            "Registration Number",
+            "company_registration_number",
+            <FaBuilding className="text-blue-500" />
+          )}
 
-          {/* Registration Number */}
-          <div className="flex items-center">
-            <label className="block text-sm font-medium leading-6 text-gray-900 flex items-center w-1/3">
-              <FaBuilding className="text-blue-500 mr-2" /> Registration Number
-            </label>
-            <input
-              type="text"
-              name="company_registration_number"
-              value={vendor.company_registration_number}
-              onChange={handleChange}
-              required
-              className="w-2/3 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              placeholder="Enter registration number"
-            />
-          </div>
+          {/* Bank */}
+          {renderInput(
+            "Bank Name",
+            "bank_name",
+            <FaMoneyCheck className="text-purple-500" />
+          )}
+          {renderInput(
+            "Account Number",
+            "account_number",
+            <FaMoneyCheck className="text-purple-500" />
+          )}
+          {renderInput(
+            "IFSC Code",
+            "ifsc_code",
+            <FaMoneyCheck className="text-purple-500" />
+          )}
 
-          {/* Bank Details */}
-          {["bank_name", "account_number", "ifsc_code"].map((field) => (
-            <div className="flex items-center" key={field}>
-              <label className="block text-sm font-medium leading-6 text-gray-900 flex items-center w-1/3">
-                <FaMoneyCheck className="text-blue-500 mr-2" />{" "}
-                {field.replace("_", " ").toUpperCase()}
-              </label>
-              <input
-                type="text"
-                name={field}
-                value={vendor[field]}
-                onChange={handleChange}
-                required
-                className="w-2/3 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                placeholder={`Enter ${field.replace("_", " ")}`}
-              />
-            </div>
-          ))}
-
-          {/* Submit Button */}
-          <div className="flex justify-center">
+          {/* Submit */}
+          <div className="pt-4 flex justify-end">
             <button
               type="submit"
-              className="flex items-center justify-center w-full py-2 px-4 mt-4 text-sm font-semibold text-white bg-gradient-to-r from-cyan-500 via-teal-500 to-indigo-500 rounded-md shadow hover:opacity-90 transition-opacity"
+              className="primaryBtn flex justify-center items-center gap-2 px-4 py-2"
             >
-              <MdSave className="mr-1" />
+              <MdSave />
               Add Vendor
             </button>
           </div>

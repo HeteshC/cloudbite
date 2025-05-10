@@ -1,0 +1,95 @@
+.add-food-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+  
+  .add-food-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .add-food-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #555;
+  }
+  
+  .form-input,
+  .form-select,
+  .form-textarea {
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  
+  .form-input:focus,
+  .form-select:focus,
+  .form-textarea:focus {
+    border-color: #007bff;
+  }
+  
+  .form-textarea {
+    resize: none;
+  }
+  
+  .image-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .image-label {
+    cursor: pointer;
+  }
+  
+  .image-preview {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .form-submit-btn {
+    padding: 10px 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .form-submit-btn:hover {
+    background-color: #0056b3;
+  }
+  

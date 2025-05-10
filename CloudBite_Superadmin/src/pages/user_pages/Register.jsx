@@ -1,249 +1,268 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { FaUserPlus } from "react-icons/fa";
-import backendGlobalRoute from "../../config/config";
+// import React, { useState } from "react";
+// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+// import { FaUserPlus } from "react-icons/fa";
+// import globalBackendRoute from "../../config/Config";
 
-export default function Register() {
+// const Register = () => {
+//   const navigate = useNavigate();
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     email: "",
+//     password: "",
+//   });
+//   const [error, setError] = useState("");
+//   const { name, email, password } = formData;
+
+//   const handleChange = (e) =>
+//     setFormData({ ...formData, [e.target.name]: e.target.value });
+
+//   const validateInputs = () => {
+//     const trimmedName = name.trim();
+//     const trimmedEmail = email.trim();
+
+//     if (!trimmedName) return "Name cannot be empty or just spaces.";
+//     if (name !== trimmedName) return "Name cannot start or end with a space.";
+
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     if (!trimmedEmail.match(emailRegex)) return "Enter a valid email address.";
+//     if (email !== trimmedEmail)
+//       return "Email cannot start or end with a space.";
+
+//     const passwordRegex =
+//       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d\S]{8,}$/;
+//     if (!password.match(passwordRegex))
+//       return "Password must be 8+ characters with uppercase, lowercase, number, and special character.";
+
+//     return null;
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     const validationError = validateInputs();
+//     if (validationError) {
+//       setError(validationError);
+//       return;
+//     }
+
+//     try {
+//       await axios.post(`${globalBackendRoute}/api/register`, {
+//         name: formData.name.trim(),
+//         email: formData.email.trim().toLowerCase(),
+//         password: formData.password,
+//       });
+//       alert("Registration successful. Redirecting to login.");
+//       navigate("/login");
+//     } catch {
+//       setError("Registration failed. Try again.");
+//     }
+//   };
+
+//   const renderInput = (label, type, id) => (
+//     <div>
+//       <label htmlFor={id} className="formLabel">
+//         {label}
+//       </label>
+//       <input
+//         id={id}
+//         name={id}
+//         type={type}
+//         value={formData[id]}
+//         onChange={handleChange}
+//         required
+//         autoComplete={
+//           id === "password" ? "new-password" : id === "email" ? "email" : "name"
+//         } // ✅ Correct autocomplete based on field
+//         className="mt-2 formInput"
+//         placeholder={`Enter your ${id}`}
+//       />
+//     </div>
+//   );
+
+//   return (
+//     <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
+//       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
+//         <FaUserPlus className="iconPrimary" />
+//         <h2 className="mt-6 text-center headingTextMobile lg:headingText">
+//           Register a new account
+//         </h2>
+//       </div>
+
+//       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-sm">
+//         {error && <p className="errorText mb-4">{error}</p>}
+
+//         <form onSubmit={handleSubmit} className="space-y-5">
+//           {renderInput("Name", "text", "name")}
+//           {renderInput("Email address", "email", "email")}
+//           {renderInput("Password", "password", "password")}
+
+//           <button type="submit" className="primaryBtn">
+//             Register
+//           </button>
+//         </form>
+
+//         <p className="mt-6 text-center paragraphTextMobile lg:paragraphText">
+//           Already have an account?{" "}
+//           <a href="/login" className="linkTextMobile lg:linkText">
+//             Sign in
+//           </a>
+//         </p>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Register;
+
+// without the eye toggle till here ..
+
+// with the password eye toggle option .
+
+import React, { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { FaUserPlus, FaEye, FaEyeSlash } from "react-icons/fa"; // ✅ Added Eye Icons
+import globalBackendRoute from "../../config/Config";
+
+const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    companyName: "",
-    companyAddress: "",
-    companyEmail: "",
-    gstNumber: "",
-    registerWithGST: false,
-    promotionalConsent: false, // Promotional consent
   });
-  const [errors, setErrors] = useState({});
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // ✅ Added state
+  const { name, email, password } = formData;
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const validateForm = () => {
+  const validateInputs = () => {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedName) return "Name cannot be empty or just spaces.";
+    if (name !== trimmedName) return "Name cannot start or end with a space.";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail.match(emailRegex)) return "Enter a valid email address.";
+    if (email !== trimmedEmail)
+      return "Email cannot start or end with a space.";
+
     const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{6,}$/;
-    const formErrors = {};
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])[A-Za-z\d\S]{8,}$/;
+    if (!password.match(passwordRegex))
+      return "Password must be 8+ characters with uppercase, lowercase, number, and special character.";
 
-    // Email validation
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-      formErrors.email = "Invalid email format.";
-
-    // Password validation
-    if (!passwordRegex.test(formData.password))
-      formErrors.password = "Password must be strong.";
-
-    // GST-related validation
-    if (formData.registerWithGST && !formData.companyName) {
-      formErrors.companyName = "Company name is required.";
-    }
-
-    if (formData.registerWithGST && !formData.gstNumber) {
-      formErrors.gstNumber = "GST number is required.";
-    }
-
-    setErrors(formErrors);
-    return Object.keys(formErrors).length === 0;
+    return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      try {
-        await axios.post(`${backendGlobalRoute}/api/register`, formData);
-        alert("Registration Successful. Redirecting to login page.");
-        navigate("/login");
-      } catch (error) {
-        alert("Unable to register");
-      }
+    const validationError = validateInputs();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      await axios.post(`${globalBackendRoute}/api/register`, {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      });
+      alert("Registration successful. Redirecting to login.");
+      navigate("/login");
+    } catch {
+      setError("Registration failed. Try again.");
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const renderInput = (label, type, id) => {
+    if (id === "password") {
+      return (
+        <div className="relative">
+          <label htmlFor={id} className="formLabel">
+            {label}
+          </label>
+          <input
+            id={id}
+            name={id}
+            type={showPassword ? "text" : "password"} // 👁️ Toggle password type
+            value={formData[id]}
+            onChange={handleChange}
+            required
+            autoComplete="new-password"
+            className="mt-2 formInput pr-10" // padding-right for icon
+            placeholder={`Enter your ${id}`}
+          />
+          {/* Eye icon */}
+          <span
+            onClick={togglePasswordVisibility}
+            className="absolute inset-y-0 right-3 flex items-center cursor-pointer"
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </span>
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <label htmlFor={id} className="formLabel">
+            {label}
+          </label>
+          <input
+            id={id}
+            name={id}
+            type={type}
+            value={formData[id]}
+            onChange={handleChange}
+            required
+            autoComplete={id === "email" ? "email" : "name"}
+            className="mt-2 formInput"
+            placeholder={`Enter your ${id}`}
+          />
+        </div>
+      );
     }
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-6 lg:px-8 mb-5">
+    <div className="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <FaUserPlus className="mx-auto h-12 w-12 text-orange-600" />
-        <h2 className="text-center text-2xl font-bold tracking-tight text-orange-600">
-          Create a new account
+        <FaUserPlus className="iconPrimary" />
+        <h2 className="mt-6 text-center headingTextMobile lg:headingText">
+          Register a new account
         </h2>
       </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="name"
-              className="block text-base font-medium text-gray-900"
-            >
-              Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-2 outline-gray-300 focus:outline-maroon-600 sm:text-sm"
-            />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name}</p>
-            )}
-          </div>
+      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-sm">
+        {error && <p className="errorText mb-4">{error}</p>}
 
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-base font-medium text-gray-900"
-            >
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-2 outline-gray-300 focus:outline-maroon-600 sm:text-sm"
-            />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email}</p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {renderInput("Name", "text", "name")}
+          {renderInput("Email address", "email", "email")}
+          {renderInput("Password", "password", "password")}
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-base font-medium text-gray-900"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-2 outline-gray-300 focus:outline-maroon-600 sm:text-sm"
-            />
-            {errors.password && (
-              <p className="text-sm text-red-600">{errors.password}</p>
-            )}
-          </div>
-
-          <div className="flex items-center mt-4">
-            <input
-              type="checkbox"
-              id="registerWithGST"
-              name="registerWithGST"
-              checked={formData.registerWithGST}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label htmlFor="registerWithGST" className="text-gray-900">
-              Register using GST details
-            </label>
-          </div>
-
-          {formData.registerWithGST && (
-            <>
-              <div>
-                <label
-                  htmlFor="companyName"
-                  className="block text-base font-medium text-gray-900"
-                >
-                  Company Name
-                </label>
-                <input
-                  id="companyName"
-                  name="companyName"
-                  type="text"
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-2 outline-gray-300 focus:outline-maroon-600 sm:text-sm"
-                />
-                {errors.companyName && (
-                  <p className="text-sm text-red-600">{errors.companyName}</p>
-                )}
-              </div>
-
-              <div>
-                <label
-                  htmlFor="companyAddress"
-                  className="block text-base font-medium text-gray-900"
-                >
-                  Company Address
-                </label>
-                <input
-                  id="companyAddress"
-                  name="companyAddress"
-                  type="text"
-                  value={formData.companyAddress}
-                  onChange={handleChange}
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-2 outline-gray-300 focus:outline-maroon-600 sm:text-sm"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="gstNumber"
-                  className="block text-base font-medium text-gray-900"
-                >
-                  GST Number
-                </label>
-                <input
-                  id="gstNumber"
-                  name="gstNumber"
-                  type="text"
-                  value={formData.gstNumber}
-                  onChange={handleChange}
-                  className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-2 outline-gray-300 focus:outline-maroon-600 sm:text-sm"
-                />
-              </div>
-            </>
-          )}
-
-          <div className="flex items-center mt-4">
-            <input
-              type="checkbox"
-              id="promotionalConsent"
-              name="promotionalConsent"
-              checked={formData.promotionalConsent}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            <label htmlFor="promotionalConsent" className="text-gray-900">
-              I agree to receive promotional content.
-            </label>
-          </div>
-
-          <div className="flex justify-center">
-            <button
-              type="submit"
-              className="w-full  bg-gray-900 text-light px-4 py-2 rounded font-semibold transition-all duration-200"
-            >
-              Sign Up
-            </button>
-          </div>
+          <button type="submit" className="primaryBtn">
+            Register
+          </button>
         </form>
-        <p className="mt-10 text-center text-lg text-gray-800">
+
+        <p className="mt-6 text-center paragraphTextMobile lg:paragraphText">
           Already have an account?{" "}
-          <a
-            href="/login"
-            className="font-semibold text-orange-500 hover:text-black"
-          >
+          <a href="/login" className="linkTextMobile lg:linkText">
             Sign in
           </a>
         </p>
       </div>
     </div>
   );
-}
+};
+
+export default Register;

@@ -1,229 +1,217 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaUserShield,
+} from "react-icons/fa";
+import { MdSave } from "react-icons/md";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt } from "react-icons/fa";
-import backendGlobalRoute from "../../config/config";
+import globalBackendRoute from "../../config/Config";
 
 export default function UpdateProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [userData, setUserData] = useState({
+
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
-    address: { street: "", city: "", state: "", postalCode: "", country: "" },
-    shipping_address: {
+    address: {
       street: "",
       city: "",
       state: "",
       postalCode: "",
       country: "",
     },
-    avatar: null,
+    avatar: "",
     role: "",
   });
 
+  const [avatar, setAvatar] = useState(null);
+
   useEffect(() => {
     const fetchUserData = async () => {
+      const token = localStorage.getItem("token");
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          alert("You are not authorized. Please log in.");
-          return navigate("/login");
-        }
-
-        const response = await axios.get(
-          `${backendGlobalRoute}/api/user/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+        const res = await axios.get(
+          `${globalBackendRoute}/api/getUserById/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
-        const fetchedData = response.data;
-        setUserData({
-          ...fetchedData,
-          address: fetchedData.address || {
-            street: "",
-            city: "",
-            state: "",
-            postalCode: "",
-            country: "",
-          },
-          shipping_address: fetchedData.shipping_address || {
-            street: "",
-            city: "",
-            state: "",
-            postalCode: "",
-            country: "",
+        const user = res.data;
+        setFormData({
+          ...user,
+          address: {
+            street: user.address?.street || "",
+            city: user.address?.city || "",
+            state: user.address?.state || "",
+            postalCode: user.address?.postalCode || "",
+            country: user.address?.country || "",
           },
         });
-      } catch (error) {
-        console.error("Error fetching user data:", error.message);
+      } catch (err) {
+        console.error("Error fetching user data:", err);
       }
     };
     fetchUserData();
-  }, [id, navigate]);
+  }, [id]);
 
-  const handleInputChange = (e) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setUserData({ ...userData, [name]: value });
+    if (name.includes("address.")) {
+      const key = name.split(".")[1];
+      setFormData((prev) => ({
+        ...prev,
+        address: { ...prev.address, [key]: value },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleAddressChange = (e, type) => {
-    const { name, value } = e.target;
-    setUserData({
-      ...userData,
-      [type]: { ...userData[type], [name]: value },
-    });
+  const handleImageChange = (e) => {
+    setAvatar(e.target.files[0]);
   };
-
-  const handleFileChange = (e) =>
-    setUserData({ ...userData, avatar: e.target.files[0] });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const token = localStorage.getItem("token");
-    if (!token) {
-      alert("You are not authorized. Please log in.");
-      return navigate("/login");
-    }
-
-    const formData = new FormData();
-    formData.append("name", userData.name);
-    formData.append("email", userData.email); // Include email if it's editable
-    formData.append("phone", userData.phone);
-    formData.append("address", JSON.stringify(userData.address)); // Send as JSON string
-    formData.append(
-      "shipping_address",
-      JSON.stringify(userData.shipping_address)
-    ); // Send as JSON string
-
-    if (userData.avatar) {
-      formData.append("avatar", userData.avatar);
-    }
+    const form = new FormData();
 
     try {
-      const response = await axios.put(
-        `${backendGlobalRoute}/api/update-user/${id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
+      for (let key in formData) {
+        if (key === "address") {
+          form.append("address", JSON.stringify(formData.address));
+        } else {
+          form.append(key, formData[key]);
         }
-      );
+      }
+      if (avatar) form.append("avatar", avatar);
+
+      await axios.put(`${globalBackendRoute}/api/update-profile/${id}`, form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       alert("Profile updated successfully!");
-      setUserData(response.data); // Update the state with the response data
       navigate(`/profile/${id}`);
-    } catch (error) {
-      console.error("Error updating profile:", error.message);
+    } catch (err) {
+      console.error("Error updating profile:", err.response || err);
       alert("Failed to update profile.");
     }
   };
 
-  const getImageUrl = (avatar, role) => {
-    if (typeof avatar === "string" && avatar.startsWith("uploads/")) {
-      const parts = avatar.split("/");
-      if (parts[1] !== role) {
-        parts[1] = role; // Replace the folder with the correct role
-      }
-      return `${backendGlobalRoute}/${parts.join("/")}`;
-    }
-    if (typeof avatar === "string") {
-      return `${backendGlobalRoute}/uploads/${role}/${avatar}`;
-    }
-    return "https://via.placeholder.com/150";
+  const getImageUrl = (avatar) => {
+    if (!avatar) return "https://via.placeholder.com/150";
+    return `${globalBackendRoute}/${avatar.replace(/\\/g, "/")}`;
   };
 
   return (
-    <div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-4xl mx-auto p-6 bg-white rounded-lg"
-    >
-      <div className="flex flex-col sm:flex-row items-center sm:items-start">
-        <img
-          initial={{ x: -50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          src={getImageUrl(userData.avatar, userData.role)}
-          alt={userData.name}
-          className="w-32 h-32 sm:w-48 sm:h-48 object-cover rounded-lg sm:rounded-xl mb-4 sm:mb-0 sm:mr-6"
-          style={{ maxWidth: "100%", height: "auto" }}
-        />
-        <div className="w-full">
-          <h3
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-base font-semibold leading-7 text-gray-900 text-left"
-          >
-            Update Profile
-          </h3>
-          <form onSubmit={handleSubmit}>
-            <div className="mt-6 border-t border-gray-100">
-              <dl className="divide-y divide-gray-100">
-                <EditableField
-                  icon={<FaUser className="text-indigo-600 mr-2" />}
-                  label="Full Name"
-                  name="name"
-                  value={userData.name}
-                  onChange={handleInputChange}
-                />
-                <EditableField
-                  icon={<FaEnvelope className="text-green-500 mr-2" />}
-                  label="Email Address"
-                  name="email"
-                  value={userData.email}
-                  onChange={handleInputChange}
-                />
-                <EditableField
-                  icon={<FaPhone className="text-yellow-500 mr-2" />}
-                  label="Phone"
-                  name="phone"
-                  value={userData.phone || ""}
-                  onChange={handleInputChange}
-                />
-                {["street", "city", "state", "postalCode", "country"].map(
-                  (field) => (
-                    <EditableField
-                      key={field}
-                      icon={<FaMapMarkerAlt className="text-blue-500 mr-2" />}
-                      label={`Address ${
-                        field.charAt(0).toUpperCase() + field.slice(1)
-                      }`}
-                      name={field}
-                      value={userData.address[field] || ""}
-                      onChange={(e) => handleAddressChange(e, "address")}
-                    />
-                  )
-                )}
-                <div className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
-                  <dt className="flex items-center text-sm font-medium leading-6 text-gray-900">
-                    Avatar
-                  </dt>
-                  <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-                    <input type="file" onChange={handleFileChange} />
-                  </dd>
-                </div>
-              </dl>
-            </div>
-            <div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 2.4, duration: 0.5 }}
-              className="mt-6 flex justify-center"
-            >
-              <button
-                type="submit"
-                className="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 focus:outline-none"
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
+    <div className="containerWidth my-6">
+      <div className="flex flex-col sm:flex-row sm:items-start items-center gap-6">
+        <div className="w-auto h-full sm:w-48 sm:h-48">
+          <img
+            src={getImageUrl(formData.avatar)}
+            alt={formData.name}
+            className="w-full h-full object-cover rounded-xl border bg-gray-100"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src =
+                "https://via.placeholder.com/150?text=No+Image";
+            }}
+          />
         </div>
+        <form onSubmit={handleSubmit} className="w-full">
+          <h2 className="subHeadingTextMobile lg:subHeadingText mb-4">
+            Update Profile
+          </h2>
+
+          <EditableField
+            label="Full Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            icon={<FaUser className="text-blue-600" />}
+          />
+          <EditableField
+            label="Email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            icon={<FaEnvelope className="text-green-600" />}
+          />
+          <EditableField
+            label="Phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            icon={<FaPhone className="text-yellow-600" />}
+          />
+          <EditableField
+            label="Street"
+            name="address.street"
+            value={formData.address.street}
+            onChange={handleChange}
+            icon={<FaMapMarkerAlt className="text-purple-600" />}
+          />
+          <EditableField
+            label="City"
+            name="address.city"
+            value={formData.address.city}
+            onChange={handleChange}
+            icon={<FaMapMarkerAlt className="text-indigo-600" />}
+          />
+          <EditableField
+            label="State"
+            name="address.state"
+            value={formData.address.state}
+            onChange={handleChange}
+            icon={<FaMapMarkerAlt className="text-pink-500" />}
+          />
+          <EditableField
+            label="Postal Code"
+            name="address.postalCode"
+            value={formData.address.postalCode}
+            onChange={handleChange}
+            icon={<FaMapMarkerAlt className="text-cyan-600" />}
+          />
+          <EditableField
+            label="Country"
+            name="address.country"
+            value={formData.address.country}
+            onChange={handleChange}
+            icon={<FaMapMarkerAlt className="text-teal-600" />}
+          />
+
+          <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 px-2 sm:px-4">
+            <dt className="flex items-center text-sm font-medium text-gray-700 gap-2">
+              Profile Image
+            </dt>
+            <dd className="mt-1 sm:col-span-2 sm:mt-0">
+              <label htmlFor="profileImage" className="fileUploadBtn">
+                Choose File
+              </label>
+              <input
+                id="profileImage"
+                type="file"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </dd>
+          </div>
+
+          <div className="mt-6 text-center">
+            <button
+              type="submit"
+              className="primaryBtn w-fit px-4 flex items-center gap-2 rounded-full mx-auto"
+            >
+              <MdSave /> Save
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -231,23 +219,20 @@ export default function UpdateProfile() {
 
 function EditableField({ icon, label, name, value, onChange }) {
   return (
-    <div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0"
-    >
-      <dt className="flex items-center text-sm font-medium leading-6 text-gray-900">
+    <div className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 px-2 sm:px-4">
+      <dt className="flex items-center text-sm font-medium text-gray-700 gap-2">
         {icon} {label}
       </dt>
-      <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-        <input
-          type="text"
-          name={name}
-          value={value}
-          onChange={onChange}
-          className="w-full border border-gray-300 rounded-md p-2"
-        />
+      <dd className="mt-1 sm:col-span-2 sm:mt-0">
+        <div className="text-sm text-gray-900 border-b border-gray-300 pb-1">
+          <input
+            type="text"
+            name={name}
+            value={value || ""}
+            onChange={onChange}
+            className="w-full bg-transparent focus:outline-none"
+          />
+        </div>
       </dd>
     </div>
   );

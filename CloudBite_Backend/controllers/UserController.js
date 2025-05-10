@@ -1,17 +1,15 @@
-// controllers/UserController.js
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const User = require("../models/UserModel.js");
-const nodemailer = require("nodemailer");
-const crypto = require("crypto");
-const dotenv = require("dotenv");
-const twilio = require("twilio");
+const User = require("../models/UserModel");
 const fs = require("fs");
 const path = require("path");
+const multer = require("multer");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
-dotenv.config();
-
-// Helper to send email
+// ----------------------------
+// HELPER TO SEND EMAIL
+// ----------------------------
 const sendEmail = (email, subject, message) => {
   const transporter = nodemailer.createTransport({
     service: "Gmail",
@@ -24,29 +22,28 @@ const sendEmail = (email, subject, message) => {
   const mailOptions = {
     from: process.env.EMAIL,
     to: email,
-    subject: subject,
+    subject,
     text: message,
   };
 
   transporter.sendMail(mailOptions, (err, info) => {
-    if (err) console.error(err);
-    else console.log("Email sent: " + info.response);
+    if (err) {
+      console.error("Failed to send email:", err);
+    } else {
+      console.log("Email sent successfully:", info.response);
+    }
   });
 };
 
-// helper function to send messages.
-// Initialize Twilio client with environment variables
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-// Function to send SMS
+// ----------------------------
+// Function to send SMS (Twilio)
+// ----------------------------
 const sendSMS = async (phone, message) => {
   try {
     const sms = await client.messages.create({
       body: message,
-      from: process.env.TWILIO_PHONE_NUMBER, // Twilio number
-      to: phone, // Recipient's phone number
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phone,
     });
     console.log("SMS sent with SID: " + sms.sid);
   } catch (error) {
@@ -54,13 +51,100 @@ const sendSMS = async (phone, message) => {
   }
 };
 
-// Register a new user
+// ----------------------------
+// MULTER STORAGE CONFIG
+// ----------------------------
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const role = req.body.role || "user";
+    const dir = path.join("uploads", role);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({ storage });
+
+// ----------------------------
+// CONTROLLERS
+// ----------------------------
+
 const register = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (error) {
+    console.error("Register Error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ message: "All fields required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid credentials" });
+
+    const token = jwt.sign(
+      { id: user._id, name: user.name, role: user.role },
+      process.env.JWT_SECRET || "ecoders_jwt_secret",
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: { id: user._id, name: user.name, role: user.role },
+    });
+  } catch (err) {
+    console.error("Login Error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.status(200).json(user);
+  } catch (err) {
+    console.error("Fetch Error:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const updateUser = async (req, res) => {
   try {
     const {
       name,
       email,
-      password,
+      phone,
+      address,
       companyName,
       companyAddress,
       companyEmail,
@@ -68,92 +152,106 @@ const register = async (req, res) => {
       promotionalConsent,
     } = req.body;
 
-    // Check if the user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ message: "User already exists." });
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (address) user.address = { ...user.address, ...JSON.parse(address) };
+    if (companyName) user.companyName = companyName;
+    if (companyAddress) user.companyAddress = companyAddress;
+    if (companyEmail) user.companyEmail = companyEmail;
+    if (gstNumber) user.gstNumber = gstNumber;
+    if (promotionalConsent !== undefined)
+      user.promotionalConsent = promotionalConsent;
 
-    // Create the new user
-    const newUser = await User.create({
-      name: name?.trim() || "User",
-      email,
-      password: hashedPassword,
-      companyName,
-      companyAddress,
-      companyEmail,
-      gstNumber,
-      promotionalConsent: promotionalConsent || false,
-    });
+    if (req.file) {
+      const newAvatarPath = path
+        .join("uploads", user.role, req.file.filename)
+        .replace(/\\/g, "/");
 
-    // Send a welcome email
-    sendEmail(
-      email,
-      "Welcome to Our Application",
-      `Hello ${newUser.name}, Welcome!`
-    );
-
-    res.status(201).json({ message: "User registered successfully" });
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-//updated login code.
-
-const login = async (req, res) => {
-  try {
-    const { email, loginType } = req.body;
-
-    if (loginType === "google") {
-      // Check if the user exists in the database
-      let user = await User.findOne({ email });
-      if (!user) {
-        // Create a new user if not found
-        user = await User.create({
-          name: email.split("@")[0], // Placeholder name from email
-          email,
-          role: "user", // Default role
-        });
+      if (user.avatar) {
+        const oldAvatarPath = path.join(__dirname, "..", user.avatar);
+        if (fs.existsSync(oldAvatarPath)) {
+          fs.unlinkSync(oldAvatarPath);
+        }
       }
 
-      // Generate a JWT token for the user
-      const token = jwt.sign(
-        { id: user._id, name: user.name, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
-
-      return res.status(200).json({ token, user });
-    } else {
-      // Handle email-password login
-      const user = await User.findOne({ email });
-      if (!user) return res.status(400).json({ message: "User not found" });
-
-      const isPasswordCorrect = await bcrypt.compare(
-        req.body.password,
-        user.password
-      );
-      if (!isPasswordCorrect)
-        return res.status(400).json({ message: "Invalid credentials" });
-
-      const token = jwt.sign(
-        { id: user._id, name: user.name, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
-
-      return res.status(200).json({ token, user });
+      user.avatar = newAvatarPath;
     }
+
+    await user.save();
+    res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error updating user:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Forgot Password - Send OTP
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.avatar) {
+      const imagePath = path.join(__dirname, "..", user.avatar);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (err) {
+    console.error("Delete Error:", err.message);
+    res.status(500).json({ message: "Failed to delete user" });
+  }
+};
+
+const getUserCounts = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const admins = await User.countDocuments({ role: "admin" });
+    const superadmins = await User.countDocuments({ role: "superadmin" });
+    const customers = await User.countDocuments({ role: "user" });
+
+    res.status(200).json({ totalUsers, admins, superadmins, customers });
+  } catch (err) {
+    console.error("Count Error:", err.message);
+    res.status(500).json({ message: "Failed to fetch counts" });
+  }
+};
+
+const getUserCountsByRole = async (req, res) => {
+  try {
+    const counts = await User.aggregate([
+      { $group: { _id: "$role", count: { $sum: 1 } } },
+    ]);
+
+    const totalUsers = await User.countDocuments();
+    const countMap = { totalUsers };
+
+    counts.forEach((item) => {
+      countMap[item._id] = item.count;
+    });
+
+    res.status(200).json(countMap);
+  } catch (err) {
+    console.error("Dynamic count error:", err.message);
+    res.status(500).json({ message: "Failed to fetch dynamic user counts" });
+  }
+};
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.status(200).json(users);
+  } catch (err) {
+    console.error("Fetch All Users Error:", err.message);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+};
+
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -161,9 +259,9 @@ const forgotPassword = async (req, res) => {
     if (!user) return res.status(400).json({ message: "User not found" });
 
     const otp = crypto.randomInt(100000, 999999).toString();
-    user.otp = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // OTP expires in 10 minutes
-    await user.save();
+    const otpExpires = Date.now() + 10 * 60 * 1000;
+
+    await User.findOneAndUpdate({ email }, { $set: { otp, otpExpires } });
 
     sendEmail(
       email,
@@ -177,7 +275,6 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// Verify OTP
 const verifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -194,40 +291,21 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-// Reset Password
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
-    console.log("Reset Password Request Received:");
-    console.log("Email:", email);
-    console.log("OTP:", otp);
-    console.log("New Password:", newPassword);
 
     const user = await User.findOne({ email, otp });
-    console.log("User found:", user);
-
-    // Check if user exists and if OTP has not expired
-    if (!user) {
-      console.log("User not found or invalid OTP");
+    if (!user || user.otpExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    if (user.otpExpires < Date.now()) {
-      console.log("OTP expired");
-      return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
-
-    // Hash and update the password
-    user.password = await bcrypt.hash(newPassword, 10);
-    console.log("Password hashed");
-
-    // Clear the OTP fields after successful reset
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
     user.otp = undefined;
     user.otpExpires = undefined;
 
-    // Save the updated user with the new password
     await user.save();
-    console.log("User saved with new password");
 
     res.status(200).json({ message: "Password reset successfully" });
   } catch (error) {
@@ -236,406 +314,43 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// Fetch all users
-const getAllUsers = async (req, res) => {
-  try {
-    const users = await User.find(); // Fetch all users
-    res.status(200).json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Fetch user by ID
-const getUserById = async (req, res) => {
-  console.log("Fetching user with ID:", req.params.id); // ✅ Log incoming request
-
-  try {
-    if (!req.params.id || req.params.id.length !== 24) {
-      console.error("Invalid user ID format.");
-      return res.status(400).json({ message: "Invalid user ID format" });
-    }
-
-    const user = await User.findById(req.params.id).select("-password");
-
-    if (!user) {
-      console.log("User not found!");
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    console.log("User found:", user); // ✅ Log found user
-    res.status(200).json(user);
-  } catch (error) {
-    console.error("Error fetching user by ID:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-};
-
-// Update user details
-const updateUser = async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      phone,
-      address,
-      companyName,
-      companyAddress,
-      companyEmail,
-      gstNumber,
-      promotionalConsent,
-    } = req.body;
-    const user = await User.findById(req.params.id);
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Update user fields
-    if (name) user.name = name;
-    if (email) user.email = email;
-    if (phone) user.phone = phone;
-    if (address) user.address = { ...user.address, ...JSON.parse(address) };
-    if (companyName) user.companyName = companyName;
-    if (companyAddress) user.companyAddress = companyAddress;
-    if (companyEmail) user.companyEmail = companyEmail;
-    if (gstNumber) user.gstNumber = gstNumber;
-    if (promotionalConsent !== undefined)
-      user.promotionalConsent = promotionalConsent;
-
-    if (req.file) {
-      const newAvatarPath = `uploads/${user.role}/${req.file.filename}`;
-      if (user.avatar) {
-        const oldAvatarPath = path.join(__dirname, "..", user.avatar);
-        if (fs.existsSync(oldAvatarPath)) fs.unlinkSync(oldAvatarPath);
-      }
-      user.avatar = newAvatarPath;
-    }
-
-    await user.save();
-    res.status(200).json(user);
-  } catch (error) {
-    console.error("Error updating user:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Update shipping address or add a new one
-const updateShippingAddress = async (req, res) => {
-  try {
-    const { shipping_address } = req.body;
-
-    if (!shipping_address) {
-      return res.status(400).json({ message: "Shipping address is required" });
-    }
-
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const parsedAddress =
-      typeof shipping_address === "string"
-        ? JSON.parse(shipping_address)
-        : shipping_address;
-
-    user.shipping_addresses.push(parsedAddress);
-    await user.save();
-
-    res
-      .status(200)
-      .json({ message: "Shipping address added successfully", user });
-  } catch (error) {
-    console.error("Error updating shipping address:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Delete a user
-const deleteUser = async (req, res) => {
-  try {
-    const userToDelete = await User.findByIdAndDelete(req.params.id);
-
-    if (!userToDelete) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    if (userToDelete.avatar) {
-      const imagePath = path.join(__dirname, "..", userToDelete.avatar);
-
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    }
-
-    res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to delete user" });
-  }
-};
-
-// count functions.
-// Fetch the total count of all users (irrespective of roles)
-const getTotalUserCount = async (req, res) => {
-  try {
-    const totalUserCount = await User.countDocuments();
-    res.status(200).json({ totalUserCount });
-  } catch (error) {
-    console.error("Error fetching total user count:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Fetch the count of users with the role of 'superadmin'
-const getSuperAdminCount = async (req, res) => {
-  try {
-    const superAdminCount = await User.countDocuments({ role: "superadmin" });
-    res.status(200).json({ superAdminCount });
-  } catch (error) {
-    console.error("Error fetching superadmin count:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Fetch the count of users with the role of 'user'
-const getUserCount = async (req, res) => {
-  try {
-    const userCount = await User.countDocuments({ role: "user" });
-    res.status(200).json({ userCount });
-  } catch (error) {
-    console.error("Error fetching user count:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Fetch the count of users with the role of 'admin'
-const getAdminCount = async (req, res) => {
-  try {
-    const adminCount = await User.countDocuments({ role: "admin" });
-    res.status(200).json({ adminCount });
-  } catch (error) {
-    console.error("Error fetching admin count:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// Fetch all users with the role of 'employee'
-const getEmployeeCount = async (req, res) => {
-  try {
-    const employees = await User.find({ role: "employee" }).select("-password");
-    res.status(200).json(employees);
-  } catch (error) {
-    console.error("Error fetching employees:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getAllSuperAdmins = async (req, res) => {
-  try {
-    const superAdmins = await User.find({ role: "superadmin" }).select(
-      "-password"
-    ); // Exclude password
-    res.status(200).json(superAdmins);
-  } catch (error) {
-    console.error("Error fetching superadmins:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getAllAdmins = async (req, res) => {
-  try {
-    const admins = await User.find({ role: "admin" }).select("-password"); // Exclude password
-    res.status(200).json(admins);
-  } catch (error) {
-    console.error("Error fetching admins:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getAllCustomers = async (req, res) => {
-  try {
-    const customers = await User.find({ role: "user" }).select("-password"); // Exclude password
-    res.status(200).json(customers);
-  } catch (error) {
-    console.error("Error fetching customers:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getAllEmployees = async (req, res) => {
-  try {
-    const employees = await User.find({ role: "employee" }).select("-password"); // Exclude password
-    res.status(200).json(employees);
-  } catch (error) {
-    console.error("Error fetching employees:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getShippingAddress = async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    // Log the incoming userId for debugging
-    console.log("Fetching shipping address for user ID:", userId);
-
-    const user = await User.findById(userId).select("shipping_address");
-    if (!user) {
-      console.error("User not found for ID:", userId);
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Handle missing shipping_address field
-    if (!user.shipping_address) {
-      console.warn("Shipping address not found for user ID:", userId);
-      return res.status(404).json({ message: "Shipping address not found" });
-    }
-
-    res.status(200).json({ shippingAddress: user.shipping_address });
-  } catch (error) {
-    console.error("Error fetching shipping address:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getLoggedInUser = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const user = await User.findById(userId).select("-password");
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Add privileges or a default role if missing
-    const userData = {
-      ...user._doc,
-      privileges: user.role || ["user"], // Example default privilege
-    };
-
-    res.status(200).json(userData);
-  } catch (error) {
-    console.error("Error fetching logged-in user:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-const getLoggedInUserForRoleChange = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const user = await User.findById(userId).select("-password");
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Add privileges or a default role if missing
-    const userData = {
-      ...user._doc,
-      privileges: user.role || ["user"], // Example default privilege
-    };
-
-    res.status(200).json(userData);
-  } catch (error) {
-    console.error("Error fetching logged-in user:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-//update roles and previlages.
-// Update user role and privileges
 const updateUserRoleAndPrivileges = async (req, res) => {
   try {
     const { role, privileges } = req.body;
+    const updateData = {};
 
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (role) updateData.role = role;
+    if (privileges) updateData.privileges = privileges;
 
-    // Update role and privileges
-    if (role) user.role = role;
-    if (privileges) user.privileges = privileges;
+    const updated = await User.findByIdAndUpdate(req.params.id, {
+      $set: updateData,
+    });
 
-    await user.save();
-    res.status(200).json({ message: "User role and privileges updated", user });
+    if (!updated) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "User role and privileges updated", updated });
   } catch (error) {
     console.error("Error updating user role and privileges:", error.message);
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// remove shipping address from the index.
-const deleteShippingAddress = async (req, res) => {
-  try {
-    const userId = req.params.id; // Extract user ID from URL
-    const index = parseInt(req.params.index, 10); // Extract index from URL
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (
-      index === undefined ||
-      isNaN(index) ||
-      index < 0 ||
-      index >= user.shipping_addresses.length
-    ) {
-      return res.status(400).json({ message: "Invalid address index" });
-    }
-
-    // Remove the selected shipping address
-    user.shipping_addresses.splice(index, 1);
-    await user.save();
-
-    res.status(200).json({
-      message: "Shipping address deleted successfully",
-      shippingAddresses: user.shipping_addresses,
-    });
-  } catch (error) {
-    console.error("Error deleting shipping address:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// fetching all the delivery_agents.
-// Fetch all users with the role of 'delivery_agent'
-const getAllDeliveryAgents = async (req, res) => {
-  try {
-    const deliveryAgents = await User.find({ role: "delivery_agent" }).select(
-      "-password"
-    ); // Exclude password
-    res.status(200).json(deliveryAgents);
-  } catch (error) {
-    console.error("Error fetching delivery agents:", error.message);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-module.exports = {
-  // Add the new function to the exports
-  deleteShippingAddress,
-};
-
-// Export functions
 module.exports = {
   register,
   login,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getUserCounts,
+  upload,
+  getAllUsers,
+  updateUserRoleAndPrivileges,
   forgotPassword,
   verifyOTP,
   resetPassword,
-  updateUser,
-  deleteUser,
-  getAllUsers,
-  getUserById,
-  updateShippingAddress,
-  getTotalUserCount,
-  getSuperAdminCount,
-  getUserCount,
-  getAdminCount,
-  getEmployeeCount,
-  getAllSuperAdmins,
-  getAllAdmins,
-  getAllCustomers,
-  getAllEmployees,
-  getShippingAddress,
-  getLoggedInUser,
-  updateUserRoleAndPrivileges,
-  getLoggedInUserForRoleChange,
-  deleteShippingAddress,
-  getAllDeliveryAgents,
+  getUserCountsByRole,
 };
