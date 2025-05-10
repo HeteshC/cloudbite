@@ -51,6 +51,7 @@ import AddProduct from "../../pages/product_pages/AddProduct";
 import AllAddedProducts from "../../pages/product_pages/AllAddedProducts";
 import SingleAddedProduct from "../../pages/product_pages/SingleAddedProduct";
 import AddFood from "../../pages/food_pages/AddFood"; // Import AddFood
+import AddKitchen from "../../pages/kitchen_pages/AddKitchen";
 
 const MainLayout = () => {
   return (
@@ -473,6 +474,17 @@ const MainLayout = () => {
               <PrivateRoute allowedRoles={["superadmin"]}>
                 <PageTitle title="Add Food">
                   <AddFood />
+                </PageTitle>
+              </PrivateRoute>
+            }
+          />
+
+          <Route
+            path="/add-kitchen"
+            element={
+              <PrivateRoute allowedRoles={["superadmin"]}>
+                <PageTitle title="Add Kitchen">
+                  <AddKitchen />
                 </PageTitle>
               </PrivateRoute>
             }

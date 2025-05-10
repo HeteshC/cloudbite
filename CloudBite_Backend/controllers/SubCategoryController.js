@@ -1,14 +1,40 @@
 const SubCategory = require("../models/SubCategoryModel");
 const Category = require("../models/CategoryModel");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// Define upload directory for subcategory images
+const subCategoryUploadDir = path.join("uploads", "subcategories");
+
+if (!fs.existsSync(subCategoryUploadDir)) {
+  fs.mkdirSync(subCategoryUploadDir, { recursive: true });
+}
+
+const subCategoryStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, subCategoryUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const filename = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+    cb(null, filename);
+  },
+});
+
+const subCategoryUpload = multer({ storage: subCategoryStorage });
+exports.subCategoryUpload = subCategoryUpload;
 
 // Create a new subcategory
 const addSubCategory = async (req, res) => {
   try {
     const { subcategory_name, category } = req.body;
 
+    const image = req.file ? req.file.path.replace(/\\/g, "/") : "";
+
     const newSubCategory = new SubCategory({
       subcategory_name,
       category,
+      image,
     });
 
     await newSubCategory.save();
@@ -59,6 +85,11 @@ const updateSubCategory = async (req, res) => {
 
     subcategory.subcategory_name = subcategory_name || subcategory.subcategory_name;
     subcategory.category = category || subcategory.category;
+
+    if (req.file) {
+      subcategory.image = req.file.path.replace(/\\/g, "/");
+    }
+
     subcategory.updatedAt = Date.now();
 
     const updated = await subcategory.save();
@@ -141,4 +172,5 @@ module.exports = {
   countAllSubCategories,
   countActiveSubCategories,
   countSubCategoriesPerCategory,
+  subCategoryUpload,
 };

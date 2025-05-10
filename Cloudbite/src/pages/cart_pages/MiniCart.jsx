@@ -4,7 +4,7 @@ import { AuthContext } from "../../components/auth_components/AuthManager";
 import { Link, useNavigate } from "react-router-dom";
 import { FaShoppingCart, FaRupeeSign, FaTrash } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import globalBackendRoute from "../../config/Config";
+import globalBackendRoute from "../../config/config";
 
 const MiniCart = () => {
   const { cartItems, removeFromCart } = useContext(CartContext);
@@ -40,7 +40,7 @@ const MiniCart = () => {
   const getImageUrl = (img) => {
     if (img) {
       const normalized = img.replace(/\\/g, "/").split("/").pop();
-      return `${globalBackendRoute}/uploads/products/${normalized}`;
+      return `${globalBackendRoute}/uploads/food_images/${normalized}`;
     }
     return "https://via.placeholder.com/150";
   };

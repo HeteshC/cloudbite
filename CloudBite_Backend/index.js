@@ -23,6 +23,7 @@ const wishlistRoutes = require("./routes/WishlistRoutes");
 const addressRoutes = require("./routes/AddressRoutes");
 const contactRoutes = require("./routes/ContactRoutes");
 const foodRoutes = require("./routes/FoodRoutes");
+const kitchenRoutes = require("./routes/KitchenRoutes");
 
 // 2. give a name to your api backend. app = express()
 dotenv.config();
@@ -55,6 +56,7 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api", addressRoutes);
 app.use("/api", contactRoutes);
 app.use("/api", foodRoutes);
+app.use("/api", kitchenRoutes);
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");

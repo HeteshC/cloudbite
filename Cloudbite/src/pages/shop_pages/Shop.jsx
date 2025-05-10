@@ -7,7 +7,7 @@ import Pagination from "../../components/shop_components/Pagination";
 import axios from "axios";
 import { CartContext } from "../../components/cart_components/CartContext";
 import { WishlistContext } from "../../components/wishlist_components/WishlistContext";
-import globalBackendRoute from "../../config/Config";
+import globalBackendRoute from "../../config/config";
 import { motion } from "framer-motion";
 import { FaTh, FaThList, FaIdBadge } from "react-icons/fa";
 import { toast } from "react-toastify";
