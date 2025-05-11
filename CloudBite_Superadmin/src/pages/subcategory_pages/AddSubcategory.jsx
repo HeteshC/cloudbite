@@ -3,10 +3,12 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import globalBackendRoute from "../../config/Config";
 import ModernTextInput from "../../components/common_components/MordernTextInput";
+import ModernFileInput from "../../components/common_components/ModernFileInput";
 
 export default function AddSubCategory() {
   const [subcategoryName, setSubcategoryName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [subcategoryImage, setSubcategoryImage] = useState(null);
   const [categories, setCategories] = useState([]);
   const [message, setMessage] = useState("");
 
@@ -28,21 +30,28 @@ export default function AddSubCategory() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!subcategoryName || !selectedCategory) {
-      setMessage("Please fill in all fields.");
+    if (!subcategoryName || !selectedCategory || !subcategoryImage) {
+      setMessage("Please fill in all fields and upload an image.");
       return;
     }
 
+    const formData = new FormData();
+    formData.append("subcategory_name", subcategoryName);
+    formData.append("category", selectedCategory);
+    formData.append("image", subcategoryImage);
+
     try {
-      await axios.post(`${globalBackendRoute}/api/add-sub-category`, {
-        subcategory_name: subcategoryName,
-        category: selectedCategory,
+      await axios.post(`${globalBackendRoute}/api/add-sub-category`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       setMessage("Subcategory added successfully!");
       alert("Subcategory added.");
       setSubcategoryName("");
       setSelectedCategory("");
+      setSubcategoryImage(null);
       navigate("/all-sub-categories");
     } catch (error) {
       console.error("Error adding subcategory:", error);
@@ -60,7 +69,7 @@ export default function AddSubCategory() {
         <p className="text-center text-sm text-red-500 mb-4">{message}</p>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
         {/* Subcategory Name */}
         <ModernTextInput
           label="Subcategory Name"
@@ -86,6 +95,14 @@ export default function AddSubCategory() {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Subcategory Image */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Subcategory Image
+          </label>
+          <ModernFileInput onFileSelect={(file) => setSubcategoryImage(file)} />
         </div>
 
         {/* Submit Button */}

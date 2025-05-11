@@ -4,13 +4,16 @@ import "./Navbar.css";
 import { assets } from "../../assets/assets";
 import { FaBars, FaTimes } from "react-icons/fa"; // Import icons for mobile menu
 import cartIcon from "../../assets/cart_icon.png"; // Import the cart icon
-
 import { AuthContext } from "../auth_components/AuthManager"; // Import AuthContext
+import { CartContext } from "../cart_components/CartContext"; // Import CartContext
 
 const Navbar = ({ setShowLogin }) => {
   const [isOpen, setIsOpen] = useState(false); // State for mobile menu
   const navigate = useNavigate(); // React Router navigation hook
   const { isLoggedIn, logout } = useContext(AuthContext); // Access authentication state and logout function
+  const { cartItems } = useContext(CartContext); // Access cart items from CartContext
+
+  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0); // Calculate total cart items
 
   return (
     <div className="navbar px-4 py-2">
@@ -38,11 +41,20 @@ const Navbar = ({ setShowLogin }) => {
       </div>
 
       {/* Login / Register (Desktop) */}
-      <div className="hidden md:flex space-x-5 items-center">
+      <div className="hidden md:flex space-x-5 items-center relative">
         {/* Cart Icon */}
-        <Link to="/cart" className="flex items-center">
+        <div
+          className="flex items-center relative"
+          onClick={() => navigate("/cart")} // Navigate to cart page on click
+          style={{ cursor: "pointer" }} // Add pointer cursor for better UX
+        >
           <img src={cartIcon} alt="Cart" className="w-16 h-16 mr-2" />
-        </Link>
+          {cartItemCount > 0 && (
+            <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+              {cartItemCount}
+            </span>
+          )}
+        </div>
         {!isLoggedIn ? (
           <>
             <Link to="/login" className="text-red-950 text-lg hover:text-red-950 font-semibold">

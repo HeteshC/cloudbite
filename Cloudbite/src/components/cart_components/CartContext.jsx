@@ -522,7 +522,7 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import { AuthContext } from "../auth_components/AuthManager";
 import axios from "axios";
-import globalBackendRoute from "../../config/Config";
+import globalBackendRoute from "../../config/config";
 import { toast } from "react-toastify";
 
 export const CartContext = createContext();

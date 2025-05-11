@@ -1,79 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import '../../styles/Cart.css';
-import axios from 'axios';
-import backendGlobalRoute from '../../config/config';
+import React, { useContext } from "react";
+import "../../styles/Cart.css";
+import { CartContext } from "../../components/cart_components/CartContext";
+import { FaTrash } from "react-icons/fa";
+import { Link, useNavigate } from "react-router-dom";
+import globalBackendRoute from "../../config/config";
 
-const Cart = () => {
-  const [cartItems, setCartItems] = useState({});
-  const [foodList, setFoodList] = useState([]);
-  const backendUrl = `${backendGlobalRoute}/uploads/`; // Define the backend URL for images
+const CartPage = () => {
+  const navigate = useNavigate();
+  const { cartItems, updateQuantity, removeFromCart, cartLoading } =
+    useContext(CartContext);
 
-  useEffect(() => {
-    const fetchCartData = async () => {
-      try {
-        const cartResponse = await axios.get(`${backendGlobalRoute}/api/cart`);
-        setCartItems(cartResponse.data.cartItems || {});
-        const foodResponse = await axios.get(`${backendGlobalRoute}/api/food/list`);
-        setFoodList(foodResponse.data.data || []);
-      } catch (error) {
-        console.error('Error fetching cart or food data:', error.message);
-      }
-    };
-
-    fetchCartData();
-  }, []);
-
-  const removeFromCart = async (id) => {
-    try {
-      await axios.post(`${backendGlobalRoute}/api/cart/remove`, { id });
-      setCartItems((prev) => {
-        const updatedCart = { ...prev };
-        delete updatedCart[id];
-        return updatedCart;
-      });
-    } catch (error) {
-      console.error('Error removing item from cart:', error.message);
+  const getImageUrl = (img) => {
+    if (img) {
+      const normalized = img.replace(/\\/g, "/").split("/").pop();
+      return `${globalBackendRoute}/uploads/food_images/${normalized}`;
     }
+    return "https://via.placeholder.com/150";
   };
 
   const getTotalCartAmount = () => {
-    return Object.keys(cartItems).reduce((total, id) => {
-      const item = foodList.find((food) => food._id === id);
-      return total + (item ? item.price * cartItems[id] : 0);
-    }, 0);
+    return cartItems.reduce(
+      (total, item) => total + item.selling_price * item.quantity,
+      0
+    );
   };
 
   return (
-    <div className='cart'>
+    <div className="cart">
       <div className="cart-items">
         <div className="cart-items-title">
           <p>Items</p>
-          <p>Tiles</p>
+          <p>Title</p>
           <p>Price</p>
           <p>Quantity</p>
           <p>Total</p>
           <p>Remove</p>
         </div>
-        <br />
         <hr />
-        {foodList.map((item) => {
-          if (cartItems[item._id] > 0) {
-            return (
-              <div key={item._id}>
-                <div className="cart-items-title cart-items-item">
-                  <img src={`${backendUrl}${item.image}`} alt={item.name} /> {/* Ensure correct image URL */}
-                  <p>{item.name}</p>
-                  <p>₹{item.price}</p>
-                  <p>{cartItems[item._id]}</p>
-                  <p>₹{item.price * cartItems[item._id]}</p>
-                  <button onClick={() => removeFromCart(item._id)}>Remove</button>
-                </div>
-                <hr />
+        {cartLoading ? (
+          <p>Loading...</p>
+        ) : cartItems.length > 0 ? (
+          cartItems.map((item) => (
+            <div key={item._id}>
+              <div className="cart-items-title cart-items-item">
+                <img
+                  src={getImageUrl(item.product_image)}
+                  alt={item.product_name}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/150";
+                  }}
+                />
+                <p>{item.product_name}</p>
+                <p>₹{item.selling_price}</p>
+                <p>{item.quantity}</p>
+                <p>₹{item.selling_price * item.quantity}</p>
+                <button onClick={() => removeFromCart(item._id)}>
+                  <FaTrash />
+                </button>
               </div>
-            );
-          }
-          return null;
-        })}
+              <hr />
+            </div>
+          ))
+        ) : (
+          <p>No items in the cart.</p>
+        )}
       </div>
       <div className="cart-bottom">
         <div className="cart-total">
@@ -94,13 +85,15 @@ const Cart = () => {
               <b>₹{getTotalCartAmount() + 30}</b>
             </div>
           </div>
-          <button>PROCEED TO CHECKOUT</button>
+          <button onClick={() => navigate("/checkout")}>
+            PROCEED TO CHECKOUT
+          </button>
         </div>
         <div className="cart-promocode">
           <div>
             <p>If you have a promo code, Enter it here</p>
             <div className="cart-promocode-input">
-              <input type="text" placeholder='promo code' />
+              <input type="text" placeholder="promo code" />
               <button>Submit</button>
             </div>
           </div>
@@ -110,4 +103,4 @@ const Cart = () => {
   );
 };
 
-export default Cart;
+export default CartPage;

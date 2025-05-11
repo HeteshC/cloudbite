@@ -13,6 +13,7 @@ const AddFood = () => {
     category: "",
     subcategory: "",
     stock: "", // Add stock field
+    slug: "",
     sku: "", // Add SKU field
     kitchen: "RebelFoods", // Ensure kitchen field remains
   });
@@ -63,6 +64,7 @@ const AddFood = () => {
       formData.append("category", data.category);
       formData.append("subcategory", data.subcategory);
       formData.append("stock", Number(data.stock)); // Include stock field
+      formData.append("slug", data.slug); // Include slug field
       formData.append("sku", data.sku); // Include SKU field
       formData.append("kitchen", data.kitchen); // Include kitchen field
       formData.append("image", image);
@@ -82,6 +84,7 @@ const AddFood = () => {
           category: "",
           subcategory: "",
           stock: "", // Reset stock field
+          slug: "", // Reset slug field
           sku: "", // Reset SKU field
           kitchen: "RebelFoods", // Reset kitchen field
         });
@@ -196,6 +199,20 @@ const AddFood = () => {
             id="stock"
             className="form-input"
             placeholder="Enter stock quantity"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="slug" className="form-label">Slug</label>
+          <input
+            onChange={onChangeHandler}
+            value={data.slug}
+            type="text"
+            name="slug"
+            id="slug"
+            className="form-input"
+            placeholder="Enter slug (unique)"
             required
           />
         </div>

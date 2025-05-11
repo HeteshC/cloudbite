@@ -13,6 +13,10 @@ const subCategorySchema = new mongoose.Schema(
       ref: "Category",
       required: true,
     },
+    image: {
+      type: String,
+      trim: true,
+    },
     isDeleted: {
       type: Boolean,
       default: false,
