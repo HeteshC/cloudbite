@@ -15,7 +15,7 @@ import { CartContext } from "../../components/cart_components/CartContext";
 import { AuthContext } from "../../components/auth_components/AuthManager";
 import { toast } from "react-toastify";
 import { Link, useNavigate } from "react-router-dom";
-import globalBackendRoute from "../../config/Config";
+import globalBackendRoute from "../../config/config";
 import axios from "axios";
 
 const CheckoutPage = () => {

@@ -35,7 +35,8 @@ import SingleProduct from "../../pages/shop_pages/SingleProduct";
 
 // cart pages
 import CartPage from "../../pages/Cart/Cart";
-import CheckoutPage from "../../pages/Cart/CheckoutPage";
+import PlaceOrder from "../../pages/PlaceOrder/PlaceOrder";
+import CheckoutPage from "../../pages/cart_pages/CheckoutPage";
 import MyOrders from "../../pages/orders_page/MyOrders";
 import ThankYou from "../../pages/orders_page/ThankYou";
 
@@ -178,6 +179,14 @@ const MainLayout = () => {
             element={
               <PageTitle title="Cart">
                 <CartPage />
+              </PageTitle>
+            }
+          />
+          <Route
+            path="/place-order"
+            element={
+              <PageTitle title="Place Order">
+                <PlaceOrder />
               </PageTitle>
             }
           />
