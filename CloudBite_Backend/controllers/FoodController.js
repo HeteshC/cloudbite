@@ -37,32 +37,23 @@ exports.addFood = async (req, res) => {
       stock,
       sku,
       kitchen,
+      discount, // Optional discount provided by superadmin
     } = req.body;
 
     const product_image = req.file?.path.replace(/\\/g, "/") || "";
 
     // Generate a unique slug if not provided
-    const slug = name ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + uuidv4() : null;
+    const slug = name
+      ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + uuidv4()
+      : uuidv4(); // Ensure slug is always generated
 
-    // Debugging: Log received data
-    console.log({
-      name,
-      description,
-      display_price,
-      selling_price,
-      category,
-      subcategory,
-      stock,
-      sku,
-      kitchen,
-      product_image,
-      slug,
-    });
+    // Calculate discount if not provided
+    const calculatedDiscount =
+      display_price > selling_price
+        ? `${Math.round(((display_price - selling_price) / display_price) * 100)}% OFF`
+        : "0% OFF";
 
-    // Validate required fields
-    if (!name || !description || !selling_price || !stock || !sku || !kitchen) {
-      return res.status(400).json({ message: "All required fields must be provided." });
-    }
+    const finalDiscount = discount || calculatedDiscount;
 
     const newFood = new Food({
       product_name: name,
@@ -75,7 +66,8 @@ exports.addFood = async (req, res) => {
       sku,
       kitchen,
       product_image,
-      slug, // Add slug to the new food item
+      slug, // Ensure slug is always set
+      discount: finalDiscount, // Store the discount
     });
 
     const savedFood = await newFood.save();
@@ -88,24 +80,41 @@ exports.addFood = async (req, res) => {
 
 exports.getAllFoods = async (req, res) => {
   try {
-    const { kitchen } = req.query; // Extract kitchen name from query params
+    const { kitchen, subcategory } = req.query; // Extract kitchen and subcategory from query params
     const filter = { isDeleted: false };
+
+    if (kitchen) {
+      filter.kitchen = kitchen; // Add kitchen filter if provided
+    }
+
+    if (subcategory) {
+      filter.subcategory = subcategory; // Add subcategory filter if provided
+    }
 
     const foods = await Food.find(filter)
       .populate({
         path: "kitchen",
         select: "name", // Only select the kitchen name
       })
-      .populate("category")
-      .populate("subcategory")
-      .populate("vendor");
+      .populate({
+        path: "subcategory",
+        select: "subcategory_name", // Only select the subcategory name
+      })
+      .populate("category");
 
-    // Filter foods by kitchen name if provided
-    const filteredFoods = kitchen
-      ? foods.filter((food) => food.kitchen?.name === kitchen)
-      : foods;
+    // Dynamically calculate discount if not already set
+    const updatedFoods = foods.map((food) => {
+      if (!food.discount || food.discount === "0% OFF") {
+        const calculatedDiscount =
+          food.display_price > food.selling_price
+            ? `${Math.round(((food.display_price - food.selling_price) / food.display_price) * 100)}% OFF`
+            : "0% OFF";
+        food.discount = calculatedDiscount;
+      }
+      return food;
+    });
 
-    res.status(200).json(filteredFoods);
+    res.status(200).json(updatedFoods);
   } catch (error) {
     console.error("Get All Foods Error:", error);
     res.status(500).json({ message: "Failed to fetch foods.", error });

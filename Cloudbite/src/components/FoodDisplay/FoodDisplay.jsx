@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useContext } from 'react';
-import './FoodDisplay.css';
-import FoodItem from '../FoodItem/FoodItem';
-import backendGlobalRoute from '../../config/config';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { CartContext } from '../../components/cart_components/CartContext'; // Import CartContext
-import { toast } from 'react-toastify';
+import React, { useState, useEffect, useContext } from "react";
+import "./FoodDisplay.css";
+import FoodItem from "../FoodItem/FoodItem";
+import backendGlobalRoute from "../../config/config";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { CartContext } from "../../components/cart_components/CartContext"; // Import CartContext
+import { toast } from "react-toastify";
 
-const FoodDisplay = ({ category }) => {
+const FoodDisplay = ({ category, filterType }) => {
   const [foodList, setFoodList] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -18,23 +18,21 @@ const FoodDisplay = ({ category }) => {
       try {
         const url = `${backendGlobalRoute}/api/all-foods`; // Fetch all food items
         const response = await axios.get(url);
-        console.log('API Response:', response.data);
+        console.log("API Response:", response.data);
         if (response.data) {
           const filteredFoodList =
-            category === "All"
-              ? response.data
-              : response.data.filter(
-                  (item) => item.kitchen?.name === category // Filter by kitchen name
-                );
+            filterType === "kitchen"
+              ? response.data.filter((item) => item.kitchen?.name === category) // Filter by kitchen name
+              : response.data.filter((item) => item.subcategory?._id === category); // Filter by subcategory ID
           setFoodList(filteredFoodList);
         } else {
-          console.error('Failed to fetch data properly');
+          console.error("Failed to fetch data properly");
         }
       } catch (error) {
-        console.error('Error fetching food list:', error.message);
+        console.error("Error fetching food list:", error.message);
         if (error.response) {
-          console.error('Error response data:', error.response.data); // Log server response
-          console.error('Error response status:', error.response.status); // Log HTTP status code
+          console.error("Error response data:", error.response.data); // Log server response
+          console.error("Error response status:", error.response.status); // Log HTTP status code
         }
       } finally {
         setLoading(false);
@@ -42,7 +40,7 @@ const FoodDisplay = ({ category }) => {
     };
 
     fetchFoodList();
-  }, [category]); // Refetch foods when category changes
+  }, [category, filterType]); // Refetch foods when category or filterType changes
 
   const handleAddToCart = (foodItem) => {
     if (foodItem.availability_status) {
@@ -50,13 +48,12 @@ const FoodDisplay = ({ category }) => {
       toast.success(`${foodItem.product_name} added to cart!`);
       navigate(`/food/${foodItem._id}`); // Navigate to SingleFood page
     } else {
-      toast.error('Cannot add. Product is Out of Stock!', { autoClose: 1200 });
+      toast.error("Cannot add. Product is Out of Stock!", { autoClose: 1200 });
     }
   };
 
   return (
-    <div className='food-display' id='food-display'>
-      {/* <h2>Top Dishes Near You</h2> */}
+    <div className="food-display" id="food-display">
       <div className="food-display-list">
         {loading ? (
           <p>Loading...</p>
@@ -64,7 +61,7 @@ const FoodDisplay = ({ category }) => {
           foodList.map((item) => (
             <div
               key={item._id}
-              style={{ cursor: 'pointer' }} // Add pointer cursor for better UX
+              style={{ cursor: "pointer" }} // Add pointer cursor for better UX
             >
               <FoodItem
                 id={item._id}

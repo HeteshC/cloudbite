@@ -10,7 +10,7 @@ const Header = () => {
   };
 
   return (
-    <div className='header' id="header">
+    <div className='header container' id="header">
       <div className="header-contents">
         <h2>From Our Kitchen to Your Doorstep</h2>
         <p>
