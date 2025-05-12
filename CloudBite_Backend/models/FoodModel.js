@@ -2,12 +2,13 @@ const mongoose = require("mongoose");
 
 const foodSchema = new mongoose.Schema({
   product_name: { type: String, required: true, trim: true },
-  slug: { type: String, unique: true, trim: true }, // Ensure slug is unique and trimmed
+  slug: { type: String, unique: true, required: true, trim: true }, // Ensure slug is unique and required
   product_image: { type: String, required: false },
   description: { type: String, required: true },
   sku: { type: String, required: true, unique: true, trim: true }, // Required field
   display_price: { type: Number },
   selling_price: { type: Number, required: true },
+  discount: { type: String, default: "0% OFF" }, // Store discount as a string (e.g., "10% OFF")
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
@@ -43,7 +44,6 @@ const foodSchema = new mongoose.Schema({
   is_new_arrival: { type: Boolean, default: false },
   is_trending: { type: Boolean, default: false },
   availability_status: { type: Boolean, default: true },
-  discount: { type: Number, default: 0 },
   min_purchase_qty: { type: Number, default: 1 },
   max_purchase_qty: { type: Number, default: 100 },
   delivery_time_estimate: { type: String },

@@ -2,26 +2,27 @@ import React, { useState, useEffect } from "react";
 import "../../styles/Add.css";
 import { assets } from "../../assets/assets";
 import axios from "axios";
-import backendGlobalRoute from "../../config/config";
+import backendGlobalRoute from "../../config/Config";
 
 const AddFood = () => {
   const [image, setImage] = useState(null);
   const [data, setData] = useState({
     name: "",
     description: "",
-    display_price: "", // Add display price field
-    selling_price: "", // Add selling price field
+    display_price: "",
+    selling_price: "",
     category: "",
     subcategory: "",
-    stock: "", // Add stock field
+    stock: "",
     slug: "",
-    sku: "", // Add SKU field
-    kitchen: "", // Ensure kitchen field remains
+    sku: "",
+    kitchen: "",
+    discount: "", // Add discount field
   });
   const [categories, setCategories] = useState([]);
   const [subcategoriesAll, setSubcategoriesAll] = useState([]);
   const [filteredSubcategories, setFilteredSubcategories] = useState([]);
-  const [kitchens, setKitchens] = useState([]); // Add state for kitchens
+  const [kitchens, setKitchens] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,11 +30,11 @@ const AddFood = () => {
         const [catRes, subRes, kitchenRes] = await Promise.all([
           axios.get(`${backendGlobalRoute}/api/all-categories`),
           axios.get(`${backendGlobalRoute}/api/all-subcategories`),
-          axios.get(`${backendGlobalRoute}/api/all-kitchens`), // Fetch kitchens
+          axios.get(`${backendGlobalRoute}/api/all-kitchens`),
         ]);
         setCategories(catRes.data);
         setSubcategoriesAll(subRes.data);
-        setKitchens(kitchenRes.data); // Set kitchens
+        setKitchens(kitchenRes.data);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -60,24 +61,27 @@ const AddFood = () => {
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
+
+    // Validate slug and SKU
+    if (!data.slug || !data.sku) {
+      alert("Slug and SKU are required and must be unique.");
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("name", data.name);
       formData.append("description", data.description);
-      formData.append("display_price", Number(data.display_price)); // Include display price
-      formData.append("selling_price", Number(data.selling_price)); // Include selling price
+      formData.append("display_price", Number(data.display_price));
+      formData.append("selling_price", Number(data.selling_price));
       formData.append("category", data.category);
       formData.append("subcategory", data.subcategory);
-      formData.append("stock", Number(data.stock)); // Include stock field
-      formData.append("slug", data.slug); // Include slug field
-      formData.append("sku", data.sku); // Include SKU field
-      formData.append("kitchen", data.kitchen); // Include kitchen field
+      formData.append("stock", Number(data.stock));
+      formData.append("slug", data.slug);
+      formData.append("sku", data.sku);
+      formData.append("kitchen", data.kitchen);
+      formData.append("discount", data.discount); // Include discount field
       formData.append("image", image);
-
-      // Debugging: Log formData
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
 
       const response = await axios.post(`${backendGlobalRoute}/api/add-food`, formData, {
         headers: {
@@ -90,14 +94,15 @@ const AddFood = () => {
         setData({
           name: "",
           description: "",
-          display_price: "", // Reset display price field
-          selling_price: "", // Reset selling price field
+          display_price: "",
+          selling_price: "",
           category: "",
           subcategory: "",
-          stock: "", // Reset stock field
-          slug: "", // Reset slug field
-          sku: "", // Reset SKU field
-          kitchen: "", // Reset kitchen field
+          stock: "",
+          slug: "",
+          sku: "",
+          kitchen: "",
+          discount: "", // Reset discount field
         });
         setImage(null);
       } else {
@@ -286,6 +291,19 @@ const AddFood = () => {
             className="form-input"
             placeholder="Enter selling price (₹)"
             required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="discount" className="form-label">Discount</label>
+          <input
+            onChange={onChangeHandler}
+            value={data.discount}
+            type="text"
+            name="discount"
+            id="discount"
+            className="form-input"
+            placeholder="Enter discount (e.g., 10% OFF)"
           />
         </div>
 

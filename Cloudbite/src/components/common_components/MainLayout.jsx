@@ -44,8 +44,8 @@ import Wishlist from "../../pages/wishlist_pages/Wishlist";
 
 // food detail page
 import SingleFood from "../SingleFoodPage/SingleFood";
-import ExploreCategory from "../ExploreCategory/ExploreCaterory";
-import ExploreKitchens from "../ExploreKitchens/ExploreKitchens";
+
+
 import FoodDisplay from "../FoodDisplay/FoodDisplay";
 import Menu from "../../pages/Menu/Menu";
 
@@ -53,7 +53,7 @@ const MainLayout = () => {
   return (
     <div className="min-h-screen text-gray-900">
       <Header />
-      <main className="flex-grow container py-6">
+      <main className="flex-grows py-6">
         <Routes>
           <Route
             path="/"
@@ -221,22 +221,8 @@ const MainLayout = () => {
               </PageTitle>
             }
           />
-          <Route
-            path="/cloud-kitchens"
-            element={
-              <PageTitle title="Explore Kitchens">
-                <ExploreKitchens />
-              </PageTitle>
-            }
-          />
-          <Route
-            path="/explore-category"
-            element={
-              <PageTitle title="Explore Category">
-                <ExploreCategory />
-              </PageTitle>
-            }
-          />
+          
+          
           <Route
             path="/menu"
             element={
