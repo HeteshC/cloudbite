@@ -13,10 +13,10 @@ const {
 // Routes
 router.post(
   "/add-food",
-  foodUpload.single("image"), // 'image' matches the field name in the form
+  foodUpload.single("image"), // Ensure 'image' matches the frontend field name
   addFood
 );
-router.get("/all-foods", getAllFoods);
+router.get("/all-foods", getAllFoods); // Ensure this route is correctly mapped
 router.get("/get-food-by-id/:id", getFoodById);
 router.put(
   "/update-food/:id",

@@ -16,28 +16,39 @@ const FoodDisplay = ({ category }) => {
   useEffect(() => {
     const fetchFoodList = async () => {
       try {
-        const response = await axios.get(`${backendGlobalRoute}/api/all-foods`);
+        const url = `${backendGlobalRoute}/api/all-foods`; // Fetch all food items
+        const response = await axios.get(url);
         console.log('API Response:', response.data);
         if (response.data) {
-          setFoodList(response.data);
+          const filteredFoodList =
+            category === "All"
+              ? response.data
+              : response.data.filter(
+                  (item) => item.kitchen?.name === category // Filter by kitchen name
+                );
+          setFoodList(filteredFoodList);
         } else {
           console.error('Failed to fetch data properly');
         }
       } catch (error) {
         console.error('Error fetching food list:', error.message);
-        toast.error('Unable to fetch food items. Please try again later.');
+        if (error.response) {
+          console.error('Error response data:', error.response.data); // Log server response
+          console.error('Error response status:', error.response.status); // Log HTTP status code
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchFoodList();
-  }, []);
+  }, [category]); // Refetch foods when category changes
 
   const handleAddToCart = (foodItem) => {
     if (foodItem.availability_status) {
       addToCart(foodItem); // Use addToCart from CartContext
       toast.success(`${foodItem.product_name} added to cart!`);
+      navigate(`/food/${foodItem._id}`); // Navigate to SingleFood page
     } else {
       toast.error('Cannot add. Product is Out of Stock!', { autoClose: 1200 });
     }
@@ -45,28 +56,27 @@ const FoodDisplay = ({ category }) => {
 
   return (
     <div className='food-display' id='food-display'>
-      <h2>Top Dishes Near You</h2>
+      {/* <h2>Top Dishes Near You</h2> */}
       <div className="food-display-list">
         {loading ? (
           <p>Loading...</p>
         ) : foodList.length > 0 ? (
-          foodList.map((item) => {
-            if (category === "All" || category === item.category?._id) {
-              return (
-                <div key={item._id} style={{ cursor: 'pointer' }}>
-                  <FoodItem
-                    id={item._id}
-                    name={item.product_name}
-                    description={item.description}
-                    price={item.selling_price}
-                    image={`${backendGlobalRoute}/${item.product_image}`}
-                    onAddToCart={() => handleAddToCart(item)} // Pass add-to-cart handler
-                  />
-                </div>
-              );
-            }
-            return null;
-          })
+          foodList.map((item) => (
+            <div
+              key={item._id}
+              style={{ cursor: 'pointer' }} // Add pointer cursor for better UX
+            >
+              <FoodItem
+                id={item._id}
+                name={item.product_name}
+                description={item.description}
+                selling_price={item.selling_price} // Pass selling price
+                display_price={item.display_price} // Pass display price
+                image={`${backendGlobalRoute}/${item.product_image}`}
+                onAddToCart={() => handleAddToCart(item)} // Pass add-to-cart handler
+              />
+            </div>
+          ))
         ) : (
           <p>No food items available.</p>
         )}

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const foodSchema = new mongoose.Schema({
   product_name: { type: String, required: true, trim: true },
-  slug: { type: String, unique: true },
+  slug: { type: String, unique: true, trim: true }, // Ensure slug is unique and trimmed
   product_image: { type: String, required: false },
   description: { type: String, required: true },
   sku: { type: String, required: true, unique: true, trim: true }, // Required field
@@ -92,19 +92,9 @@ const foodSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   kitchen: {
-    type: String,
-    required: true, // Required field
-    enum: [
-      "RebelFoods",
-      "FreshMenu",
-      "EatFit",
-      "Box8",
-      "SLAYCoffee",
-      "SweetTruth",
-      "BohriKitchen",
-      "HOIFoods",
-    ],
-    default: "RebelFoods",
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Kitchen", // Ensure this matches the Kitchen model name
+    required: true,
   },
 });
 

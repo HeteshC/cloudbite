@@ -1,20 +1,27 @@
 import React from "react";
 import "./FoodItem.css";
 
-const FoodItem = ({ id, name, description, price, image, onAddToCart }) => {
+const FoodItem = ({ id, name, description, selling_price, display_price, image, onAddToCart }) => {
   return (
     <div className="food-item">
       <img src={image} alt={name} className="food-item-image" />
       <div className="food-item-details">
-        <h3>{name}</h3>
+        <h3 className="mt-2">{name}</h3>
         <p>{description}</p>
-        <p>${price}</p>
-        <button
-          className="add-to-cart-btn"
-          onClick={onAddToCart} // Trigger add-to-cart handler
-        >
-          Add to Cart
-        </button>
+        <div className="food-item-prices-and-cart">
+          <div className="food-item-prices">
+            {display_price > selling_price && (
+              <span className="food-item-display-price">₹{display_price}</span>
+            )}
+            <span className="food-item-selling-price">₹{selling_price}</span>
+          </div>
+          <button
+            className="add-to-cart-btn"
+            onClick={onAddToCart} // Trigger add-to-cart handler
+          >
+            Add to Cart
+          </button>
+        </div>
       </div>
     </div>
   );

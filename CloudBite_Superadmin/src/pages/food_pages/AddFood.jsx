@@ -9,29 +9,33 @@ const AddFood = () => {
   const [data, setData] = useState({
     name: "",
     description: "",
-    price: "",
+    display_price: "", // Add display price field
+    selling_price: "", // Add selling price field
     category: "",
     subcategory: "",
     stock: "", // Add stock field
     slug: "",
     sku: "", // Add SKU field
-    kitchen: "RebelFoods", // Ensure kitchen field remains
+    kitchen: "", // Ensure kitchen field remains
   });
   const [categories, setCategories] = useState([]);
   const [subcategoriesAll, setSubcategoriesAll] = useState([]);
   const [filteredSubcategories, setFilteredSubcategories] = useState([]);
+  const [kitchens, setKitchens] = useState([]); // Add state for kitchens
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [catRes, subRes] = await Promise.all([
+        const [catRes, subRes, kitchenRes] = await Promise.all([
           axios.get(`${backendGlobalRoute}/api/all-categories`),
           axios.get(`${backendGlobalRoute}/api/all-subcategories`),
+          axios.get(`${backendGlobalRoute}/api/all-kitchens`), // Fetch kitchens
         ]);
         setCategories(catRes.data);
         setSubcategoriesAll(subRes.data);
+        setKitchens(kitchenRes.data); // Set kitchens
       } catch (error) {
-        console.error("Failed to fetch categories or subcategories:", error);
+        console.error("Error fetching data:", error);
       }
     };
     fetchData();
@@ -60,7 +64,8 @@ const AddFood = () => {
       const formData = new FormData();
       formData.append("name", data.name);
       formData.append("description", data.description);
-      formData.append("price", Number(data.price));
+      formData.append("display_price", Number(data.display_price)); // Include display price
+      formData.append("selling_price", Number(data.selling_price)); // Include selling price
       formData.append("category", data.category);
       formData.append("subcategory", data.subcategory);
       formData.append("stock", Number(data.stock)); // Include stock field
@@ -68,6 +73,11 @@ const AddFood = () => {
       formData.append("sku", data.sku); // Include SKU field
       formData.append("kitchen", data.kitchen); // Include kitchen field
       formData.append("image", image);
+
+      // Debugging: Log formData
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
 
       const response = await axios.post(`${backendGlobalRoute}/api/add-food`, formData, {
         headers: {
@@ -80,13 +90,14 @@ const AddFood = () => {
         setData({
           name: "",
           description: "",
-          price: "",
+          display_price: "", // Reset display price field
+          selling_price: "", // Reset selling price field
           category: "",
           subcategory: "",
           stock: "", // Reset stock field
           slug: "", // Reset slug field
           sku: "", // Reset SKU field
-          kitchen: "RebelFoods", // Reset kitchen field
+          kitchen: "", // Reset kitchen field
         });
         setImage(null);
       } else {
@@ -241,27 +252,39 @@ const AddFood = () => {
             className="form-select"
             required
           >
-            <option value="RebelFoods">RebelFoods</option>
-            <option value="FreshMenu">FreshMenu</option>
-            <option value="EatFit">EatFit</option>
-            <option value="Box8">Box8</option>
-            <option value="SLAYCoffee">SLAYCoffee</option>
-            <option value="SweetTruth">SweetTruth</option>
-            <option value="BohriKitchen">BohriKitchen</option>
-            <option value="HOIFoods">HOIFoods</option>
+            <option value="">-- Select Kitchen --</option>
+            {kitchens.map((kitchen) => (
+              <option key={kitchen._id} value={kitchen._id}>
+                {kitchen.name}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="form-group">
-          <label htmlFor="price" className="form-label">Product Price</label>
+          <label htmlFor="display_price" className="form-label">Display Price</label>
           <input
             onChange={onChangeHandler}
-            value={data.price}
+            value={data.display_price}
             type="number"
-            name="price"
-            id="price"
+            name="display_price"
+            id="display_price"
             className="form-input"
-            placeholder="Enter price (₹)"
+            placeholder="Enter display price (₹)"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="selling_price" className="form-label">Selling Price</label>
+          <input
+            onChange={onChangeHandler}
+            value={data.selling_price}
+            type="number"
+            name="selling_price"
+            id="selling_price"
+            className="form-input"
+            placeholder="Enter selling price (₹)"
             required
           />
         </div>
