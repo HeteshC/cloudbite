@@ -23,7 +23,7 @@ const KitchenSchema = new mongoose.Schema({
     default: 'active'
   },
   operating_hours: {
-    type: Number,
+    type: String,
     required: true
   },
   tags: {

@@ -2,6 +2,7 @@ const Food = require("../models/FoodModel");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const { v4: uuidv4 } = require("uuid"); // Import UUID for unique slug generation
 
 const foodUploadDir = path.join("uploads", "food_images");
 
@@ -29,7 +30,8 @@ exports.addFood = async (req, res) => {
     const {
       name,
       description,
-      price,
+      display_price,
+      selling_price,
       category,
       subcategory,
       stock,
@@ -39,21 +41,41 @@ exports.addFood = async (req, res) => {
 
     const product_image = req.file?.path.replace(/\\/g, "/") || "";
 
-    // Validate required fields
-    if (!name || !description || !price || !stock || !sku || !kitchen) {
-      return res.status(400).json({ message: "All required fields must be provided." });
-    }
+    // Generate a unique slug if not provided
+    const slug = name ? name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + uuidv4() : null;
 
-    const newFood = new Food({
-      product_name: name,
+    // Debugging: Log received data
+    console.log({
+      name,
       description,
-      selling_price: price,
+      display_price,
+      selling_price,
       category,
       subcategory,
       stock,
       sku,
       kitchen,
       product_image,
+      slug,
+    });
+
+    // Validate required fields
+    if (!name || !description || !selling_price || !stock || !sku || !kitchen) {
+      return res.status(400).json({ message: "All required fields must be provided." });
+    }
+
+    const newFood = new Food({
+      product_name: name,
+      description,
+      display_price: display_price || selling_price,
+      selling_price,
+      category,
+      subcategory,
+      stock,
+      sku,
+      kitchen,
+      product_image,
+      slug, // Add slug to the new food item
     });
 
     const savedFood = await newFood.save();
@@ -66,14 +88,27 @@ exports.addFood = async (req, res) => {
 
 exports.getAllFoods = async (req, res) => {
   try {
-    const foods = await Food.find({ isDeleted: false })
+    const { kitchen } = req.query; // Extract kitchen name from query params
+    const filter = { isDeleted: false };
+
+    const foods = await Food.find(filter)
+      .populate({
+        path: "kitchen",
+        select: "name", // Only select the kitchen name
+      })
       .populate("category")
       .populate("subcategory")
       .populate("vendor");
-    res.status(200).json(foods);
+
+    // Filter foods by kitchen name if provided
+    const filteredFoods = kitchen
+      ? foods.filter((food) => food.kitchen?.name === kitchen)
+      : foods;
+
+    res.status(200).json(filteredFoods);
   } catch (error) {
     console.error("Get All Foods Error:", error);
-    res.status(500).json({ message: "Failed to fetch foods." });
+    res.status(500).json({ message: "Failed to fetch foods.", error });
   }
 };
 
@@ -82,7 +117,8 @@ exports.getFoodById = async (req, res) => {
     const food = await Food.findById(req.params.id)
       .populate("category")
       .populate("subcategory")
-      .populate("vendor");
+      .populate("vendor")
+      .populate("kitchen"); // Populate kitchen field
 
     if (!food || food.isDeleted) {
       return res.status(404).json({ message: "Food not found." });

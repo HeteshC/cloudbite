@@ -36,7 +36,7 @@ const ExploreCategory = ({ category, setCategory }) => {
 
   return (
     <div className='explore-category fs-6 my-4' id='explore-category'>
-      <h2 className='fs-1'>Inspiration for your first order</h2>
+      <h2 className='fs-1'>Explore Our Category</h2>
       {/* <p className='explore-kitchen-text'>
         Step into a vibrant kitchen filled with a delightful selection of flavors. 
         Our mission is to indulge your taste buds and enhance your culinary journey, one exceptional dish at a time.

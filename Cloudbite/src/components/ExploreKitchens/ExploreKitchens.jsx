@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import globalBackendRoute from "../../config/config";
+import FoodDisplay from "../FoodDisplay/FoodDisplay"; // Import FoodDisplay component
 import "./ExploreKitchens.css";
 
 const ExploreKitchens = ({ category, setCategory }) => {
   const [kitchens, setKitchens] = useState([]);
+  const [selectedKitchenId, setSelectedKitchenId] = useState(null); // Track selected kitchen ID
 
   useEffect(() => {
     const fetchKitchens = async () => {
@@ -15,6 +17,7 @@ const ExploreKitchens = ({ category, setCategory }) => {
         console.error("Failed to fetch kitchens:", error);
       }
     };
+
     fetchKitchens();
   }, []);
 
@@ -33,13 +36,18 @@ const ExploreKitchens = ({ category, setCategory }) => {
     }
   };
 
+  const handleKitchenClick = (kitchen) => {
+    setCategory(kitchen.name);
+    setSelectedKitchenId(kitchen._id); // Update selected kitchen ID
+  };
+
   return (
     <div className="explore-kitchens fs-6 my-4" id="explore-kitchens">
       <h1 className="fs-1">Explore Our Kitchens</h1>
       <div className="explore-kitchen-list">
         {kitchens.map((kitchen) => (
           <div
-            onClick={() => setCategory(kitchen.name)}
+            onClick={() => handleKitchenClick(kitchen)}
             key={kitchen._id}
             className="explore-kitchen-list-item"
           >
@@ -53,6 +61,11 @@ const ExploreKitchens = ({ category, setCategory }) => {
             <p>{kitchen.name}</p>
           </div>
         ))}
+      </div>
+      <div className="explore-food-list">
+        <h2 className="fs-2">Foods {category ? `in ${category}` : "Available"}</h2>
+        {/* Use FoodDisplay component to show food items */}
+        <FoodDisplay category={selectedKitchenId || "All"} />
       </div>
     </div>
   );
