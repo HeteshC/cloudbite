@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { AuthContext } from "../../components/auth_components/AuthManager";
 import CustomeLink from "../common_components/CustomeLink";
+import SALogo from "../../assets/SA_LOGO.png"; // Import the logo image
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -67,27 +68,14 @@ export default function Header() {
   return (
     <header>
       {/* Desktop Header */}
-      <nav className="bg-gray-800 text-white shadow-sm" aria-label="Global">
-        <div className="containerWidth flex items-center justify-between py-4">
-          {/* Logo */}
-          <div className="flex lg:flex-1">
-            <CustomeLink linkAddress="/home" linkName="LOGO" />
+      <nav className="bg-zinc-700 text-white shadow-sm" aria-label="Global">
+        <div className="containerWidth font-bold flex items-center justify-between py-3">
+          <img src={SALogo} alt="Cloudbite Superadmin Logo" className="h-28 w-auto" /> {/* Logo */}
+          
+          {/* Centered Nav Links */}
+          <div className="hidden lg:flex lg:gap-x-8 justify-center flex-1 lg:ml-56"> {/* Increased lg:ml-16 */}
+            {renderLinks()}
           </div>
-
-          {/* Hamburger Menu */}
-          <div className="flex lg:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(true)}
-              className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-white"
-            >
-              <span className="sr-only">Open main menu</span>
-              <Bars3Icon className="h-6 w-6" />
-            </button>
-          </div>
-
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex lg:gap-x-8">{renderLinks()}</div>
 
           {/* Right: Login/Profile */}
           <div className="hidden lg:flex lg:flex-1 lg:justify-end items-center">

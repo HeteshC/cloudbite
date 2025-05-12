@@ -1,117 +1,51 @@
-// Footer.jsx
-import React from "react";
-// import SubscriptionForm from "./SubscriptionForm";
-import { FaFacebookF, FaTwitter, FaGithub, FaLinkedinIn } from "react-icons/fa";
+import React from 'react';
+import './Footer.css';
+import SALogo from "../../assets/SA_LOGO.png";
+import FacebookIcon from "../../assets/facebook_icon.png"; // Import Facebook icon
+import TwitterIcon from "../../assets/twitter_icon.png";   // Import Twitter icon
+import LinkedInIcon from "../../assets/linkedin_icon.png"; // Import LinkedIn icon
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-800 text-gray-300 pt-12 pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Top Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
-          {/* Company Info */}
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4">Company</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="/about-us" className="hover:text-white transition">
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a href="/contact-us" className="hover:text-white transition">
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a href="/careers" className="hover:text-white transition">
-                  Careers
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Support */}
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="/help-center" className="hover:text-white transition">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/privacy-policy"
-                  className="hover:text-white transition"
-                >
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/terms-of-service"
-                  className="hover:text-white transition"
-                >
-                  Terms of Service
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Social Media */}
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4">Follow Us</h3>
-            <div className="flex space-x-4">
-              <a href="#" className="hover:text-white transition">
-                <FaFacebookF />
-              </a>
-              <a href="#" className="hover:text-white transition">
-                <FaTwitter />
-              </a>
-              <a href="#" className="hover:text-white transition">
-                <FaGithub />
-              </a>
-              <a href="#" className="hover:text-white transition">
-                <FaLinkedinIn />
-              </a>
-            </div>
-          </div>
-
-          {/* Subscription Form */}
-          {/* <div>
-            <h3 className="text-white text-lg font-semibold mb-4">Subscribe</h3>
-            <SubscriptionForm />
-          </div> */}
-
-          <div>
-            <h3 className="text-white text-lg font-semibold mb-4">Address</h3>
-            <div className=" space-x-4">
-              <a href="#" className="hover:text-white transition">
-                Ecoders, Hesaraghatta Road,
-              </a>
-              <a href="#" className="hover:text-white transition">
-                Bagalagunte, Defence Colony
-              </a>
-              <a href="#" className="hover:text-white transition">
-                Bangalore
-              </a>
-              <a href="#" className="hover:text-white transition">
-                Pin Code - 560057
-              </a>
-            </div>
-          </div>
+    <div className='footer' id='footer'>
+      <div className="footer-content">
+        <div className="footer-content-left">
+          <img src={SALogo} alt="" className='logo'/>
         </div>
-
-        {/* Bottom Section */}
-        <div className="border-t border-gray-700 pt-6 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm">
-            &copy; 2025 Ecoders, Inc. All rights reserved.
-          </p>
-          <p className="text-sm mt-4 md:mt-0">Made with ❤️ in Bengaluru</p>
+        <div className="footer-content-left2">
+          <h2>COMPANY</h2>
+          <ul>
+            <li><a href="/superadmin-dashboard">Home</a></li>
+            <li><a href="/about-us">About Us</a></li>
+            <li><a href="/contact-us">Contact Us</a></li>
+            <li><a href="/superadmin-dashboard">Dashboard</a></li>
+          </ul>
+        </div>
+        <div className="footer-content-center">
+          <h2>ADMIN DASHBOARD</h2>
+          <ul>
+            <li><a href="/add-kitchen"> Add Kitchen</a></li>
+            <li><a href="/add-category">Add Category</a></li>
+            <li><a href="/add-subcategory">Add Subcategory</a></li>
+            <li><a href="/add-food">Add Food</a></li>
+          </ul>
+        </div>
+        <div className="footer-content-right">
+          <h2>GET IN TOUCH</h2>
+          <ul>
+            <li><a href="tel:+15347489488">+1-534-748-9488</a></li>
+            <li><a href="mailto:contact@cloudbite.com">contact@cloudbite.com</a></li>
+          </ul>
+          <div className="footer-social-icons">
+            <img src={FacebookIcon} alt="Facebook" />
+            <img src={TwitterIcon} alt="Twitter" />
+            <img src={LinkedInIcon} alt="LinkedIn" />
+          </div>
         </div>
       </div>
-    </footer>
+      <hr />
+      <p className="footer-copyright">Copyright 2025 © Cloudbite.com - All Right Reserved.</p>
+    </div>
   );
 };
 

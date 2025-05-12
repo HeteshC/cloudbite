@@ -85,7 +85,7 @@ const CartPage = () => {
               <b>₹{getTotalCartAmount() + 30}</b>
             </div>
           </div>
-          <button onClick={() => navigate("/checkout")}>
+          <button onClick={() => navigate("/place-order")}>
             PROCEED TO CHECKOUT
           </button>
         </div>

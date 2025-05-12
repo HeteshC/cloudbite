@@ -173,6 +173,11 @@ const SuperadminDashboard = () => {
                   path: `/profile/${userId}`,
                 },
                 {
+                  label: "Add Kitchen",
+                  icon: <FaStore className="text-purple-600" />,
+                  path: "/add-kitchen",
+                },
+                {
                   label: "Add Category",
                   icon: <FaPlus className="text-orange-400" />,
                   path: "/add-category",
@@ -183,25 +188,21 @@ const SuperadminDashboard = () => {
                   path: "/add-sub-category",
                 },
                 {
-                  label: "Add Product",
+                  label: "Add Food",
                   icon: <FaBoxOpen className="text-green-600" />,
-                  path: "/add-product",
+                  path: "/add-food",
                 },
-                {
-                  label: "Add Vendor",
-                  icon: <FaStore className="text-purple-600" />,
-                  path: "/add-vendor",
-                },
-                {
-                  label: "Add Outlet",
-                  icon: <FaBuilding className="text-orange-500" />,
-                  path: "/add-outlet",
-                },
-                {
-                  label: "Add Employee",
-                  icon: <FaUserPlus className="text-teal-600" />,
-                  path: "/add-employee",
-                },
+               
+                // {
+                //   label: "Add Outlet",
+                //   icon: <FaBuilding className="text-orange-500" />,
+                //   path: "/add-outlet",
+                // },
+                // {
+                //   label: "Add Employee",
+                //   icon: <FaUserPlus className="text-teal-600" />,
+                //   path: "/add-employee",
+                // },
               ]}
             />
           }
