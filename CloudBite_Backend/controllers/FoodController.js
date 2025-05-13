@@ -140,6 +140,27 @@ exports.getFoodById = async (req, res) => {
   }
 };
 
+exports.getFoodBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const food = await Food.findOne({ slug, isDeleted: false })
+      .populate("category")
+      .populate("subcategory")
+      .populate("vendor")
+      .populate("kitchen"); // Populate related fields
+
+    if (!food) {
+      return res.status(404).json({ message: "Food not found." });
+    }
+
+    res.status(200).json(food);
+  } catch (error) {
+    console.error("Get Food By Slug Error:", error);
+    res.status(500).json({ message: "Failed to fetch food by slug." });
+  }
+};
+
 exports.updateFoodById = async (req, res) => {
   try {
     const updatedFields = { ...req.body };

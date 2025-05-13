@@ -97,7 +97,7 @@ const PlaceOrder = () => {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/place-order')}
+            onClick={() => navigate('/thank-you')}
           >
             PROCEED TO PAYMENT
           </button>

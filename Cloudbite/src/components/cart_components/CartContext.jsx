@@ -143,8 +143,10 @@ export const CartProvider = ({ children }) => {
   const addToCart = async (product) => {
     try {
       if (!product || !product._id) {
-        throw new Error("Invalid product data. Product ID is required.");
+        throw new Error("Invalid product data. Food ID is required.");
       }
+
+      console.log("Adding product to cart:", product); // Log the product being added
 
       if (isLoggedIn) {
         const token = localStorage.getItem("token");
@@ -154,7 +156,7 @@ export const CartProvider = ({ children }) => {
 
         const response = await axios.post(
           `${globalBackendRoute}/api/add-to-cart`,
-          { productId: product._id, quantity: 1 },
+          { foodId: product._id, quantity: 1 }, // Ensure correct payload
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -183,7 +185,7 @@ export const CartProvider = ({ children }) => {
       // Show only one toast message with the product name
       toast.success(`${product.product_name} added to cart!`);
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      console.error("Error adding to cart:", error); // Log the error for debugging
       toast.error("Failed to add item to cart.");
     }
   };
@@ -191,26 +193,53 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (productId) => {
     if (isLoggedIn) {
       try {
-        await axios.delete(
-          `${globalBackendRoute}/api/remove-cart-item/${productId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        fetchServerCart(); // Refresh the cart after removal
-        toast.success("Item removed from cart!"); // Show toast message
+        const item = cartItems.find((item) => item._id === productId);
+        if (item && item.quantity > 1) {
+          // Decrement quantity if more than 1
+          await axios.patch(
+            `${globalBackendRoute}/api/update-cart/${productId}`,
+            { quantity: item.quantity - 1 },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          fetchServerCart(); // Refresh the cart after update
+          toast.success("Item quantity updated!");
+        } else {
+          // Remove item completely if quantity is 1
+          await axios.delete(
+            `${globalBackendRoute}/api/remove-cart-item/${productId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          fetchServerCart(); // Refresh the cart after removal
+          toast.success("Item removed from cart!");
+        }
       } catch (error) {
         console.error("Failed to remove item:", error.message);
-        toast.error("Failed to remove item from cart!");
+        toast.error("Failed to update cart!");
       }
     } else {
       setCartItems((prev) => {
-        const updatedCart = prev.filter((item) => item._id !== productId);
-        return updatedCart;
+        const existingItem = prev.find((item) => item._id === productId);
+        if (existingItem && existingItem.quantity > 1) {
+          // Decrement quantity if more than 1
+          return prev.map((item) =>
+            item._id === productId
+              ? { ...item, quantity: item.quantity - 1 }
+              : item
+          );
+        } else {
+          // Remove item completely if quantity is 1
+          return prev.filter((item) => item._id !== productId);
+        }
       });
-      toast.success("Item removed from cart!"); // Show toast message
+      toast.success("Cart updated!");
     }
   };
 

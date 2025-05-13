@@ -13,7 +13,7 @@ const ThankYou = () => {
         We have received your order. We will process and ship it soon.
       </p>
       <Link
-        to="/shop"
+        to="/"
         className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full font-bold hover:opacity-90 transition"
       >
         Continue Shopping

@@ -6,12 +6,12 @@ const { verifyToken } = require("../middleware/AuthMiddleware");
 router.get("/get-cart-items", verifyToken, cartController.getCart);
 router.post("/add-to-cart", verifyToken, cartController.addToCart);
 router.patch(
-  "/update-cart/:productId",
+  "/update-cart/:foodId", // Updated to use foodId
   verifyToken,
   cartController.updateCartItem
 );
 router.delete(
-  "/remove-cart-item/:productId",
+  "/remove-cart-item/:foodId", // Updated to use foodId
   verifyToken,
   cartController.removeCartItem
 );
