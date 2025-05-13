@@ -19,7 +19,10 @@ const cartSchema = new mongoose.Schema({
     ref: "User", // Link to User
     required: true,
   },
-  items: [cartItemSchema], // Array of cart items
+  items: {
+    type: [cartItemSchema], // Array of cart items
+    default: [], // Default to an empty array
+  },
 });
 
 module.exports = mongoose.model("Cart", cartSchema);

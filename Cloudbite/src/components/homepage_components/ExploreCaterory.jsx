@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import globalBackendRoute from "../../config/config";
 import FoodDisplay from "../FoodDisplay/FoodDisplay"; // Import FoodDisplay component
@@ -6,12 +6,32 @@ import FoodDisplay from "../FoodDisplay/FoodDisplay"; // Import FoodDisplay comp
 const SubCategoryExplore = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null); // State to track selected subcategory
+  const scrollContainerRef = useRef(null); // Ref for the scrollable container
+  const isDragging = useRef(false); // Track drag state
+  const startX = useRef(0); // Track initial X position
+  const scrollLeft = useRef(0); // Track initial scroll position
 
   useEffect(() => {
     const fetchSubcategories = async () => {
       try {
-        const response = await axios.get(`${globalBackendRoute}/api/all-subcategories`);
-        setSubcategories(response.data);
+        const categoryResponse = await axios.get(`${globalBackendRoute}/api/all-categories`);
+        const vegCategory = categoryResponse.data.find(
+          (category) => category.category_name === "VEG"
+        );
+
+        console.log("VEG Category:", vegCategory); // Log the VEG category values
+
+        if (vegCategory) {
+          const subcategoryResponse = await axios.get(`${globalBackendRoute}/api/all-subcategories`);
+          console.log("Raw Subcategories:", subcategoryResponse.data); // Log raw subcategory data
+
+          const vegSubcategories = subcategoryResponse.data.filter(
+            (subcategory) => String(subcategory.category._id) === String(vegCategory._id) // Compare category._id
+          );
+
+          console.log("Filtered Subcategories:", vegSubcategories); // Log the filtered subcategories
+          setSubcategories(vegSubcategories);
+        }
       } catch (error) {
         console.error("Error fetching subcategories:", error.message);
       }
@@ -24,10 +44,36 @@ const SubCategoryExplore = () => {
     setSelectedSubcategory(subcategoryId); // Set the clicked subcategory as selected
   };
 
+  const handleMouseDown = (e) => {
+    isDragging.current = true;
+    startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeft.current = scrollContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 2; // Adjust scroll speed
+    scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDragging.current = false;
+  };
+
   return (
     <div className="bg-[#f9f6f6] py-10 px-5">
       <h2 className="text-4xl font-semibold text-[#450c0c] mb-10">Explore Our Categories</h2>
-      <div className="flex justify-start gap-20 flex-wrap">
+      <div
+        ref={scrollContainerRef}
+        className="flex gap-10 overflow-x-auto whitespace-nowrap scrollbar-hide"
+        style={{ scrollBehavior: "smooth" }}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUpOrLeave}
+        onMouseLeave={handleMouseUpOrLeave}
+      >
         {subcategories.map((subcategory) => (
           <div
             key={subcategory._id}

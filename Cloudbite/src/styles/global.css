@@ -118,3 +118,13 @@
             @apply py-20;
       }
 }
+
+/* Add this to your global CSS file */
+.scrollbar-hide {
+      -ms-overflow-style: none; /* Internet Explorer 10+ */
+      scrollbar-width: none; /* Firefox */
+    }
+    
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, and Opera */
+    }

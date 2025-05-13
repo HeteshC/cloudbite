@@ -1,18 +1,60 @@
 import { Store } from 'lucide-react';
-import React, { useContext } from 'react';
-import { CartContext } from '../../components/cart_components/CartContext'; // Import CartContext
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import './PlaceOrder.css'; // Assuming you have a CSS file for styles
+import globalBackendRoute from '../../config/config'; // Adjust the import based on your project structure
 
 const PlaceOrder = () => {
-  const { cartItems } = useContext(CartContext); // Access cartItems from CartContext
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate();
+  const [cartItems, setCartItems] = useState([]); // Ensure cartItems is always an array
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCartItems = async () => {
+      try {
+        const token = localStorage.getItem('token'); // Retrieve token from localStorage
+        if (!token) {
+          throw new Error("User is not authenticated.");
+        }
+
+        const response = await axios.get(`${globalBackendRoute}/api/get-cart-items`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token in Authorization header
+          },
+        });
+        setCartItems(response.data.items || []); // Ensure items is always an array
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching cart items:', err);
+        setError(err.response?.data?.message || 'Failed to load cart items.');
+        setLoading(false);
+      }
+    };
+
+    fetchCartItems();
+  }, []);
 
   const getTotalCartAmount = () => {
+    if (!Array.isArray(cartItems) || cartItems.length === 0) return 0; // Handle empty or undefined cartItems
     return cartItems.reduce(
-      (total, item) => total + item.selling_price * item.quantity,
+      (total, item) => total + (item.selling_price || 0) * (item.quantity || 0),
       0
     );
   };
+
+  if (loading) {
+    return <p>Loading cart items...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
+
+  if (cartItems.length === 0) {
+    return <p>Your cart is empty.</p>;
+  }
 
   return (
     <form className="place-order">

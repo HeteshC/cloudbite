@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Star } from "lucide-react";
 import axios from "axios";
 import globalBackendRoute from "../../config/config";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const VISIBLE_COUNT = 4;
 
 const FeaturedProducts = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
+  const navigate = useNavigate(); // Initialize navigate
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -35,6 +37,10 @@ const FeaturedProducts = () => {
     if (startIndex > 0) {
       setStartIndex(startIndex - 1);
     }
+  };
+
+  const handleNavigateToSingleFood = (id) => {
+    navigate(`/food/${id}`); // Navigate to the single food page with the product ID
   };
 
   return (
@@ -67,36 +73,37 @@ const FeaturedProducts = () => {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {visibleProducts.map((food, index) => (
-          <div key={index} className="text-center">
-            
+          <div
+            key={index}
+            className="text-center cursor-pointer"
+            onClick={() => handleNavigateToSingleFood(food._id)} // Navigate on click
+          >
             <img
               src={`${globalBackendRoute}/${food.product_image}`}
               alt={food.food_name}
               className="mx-auto h-40 object-contain mb-3"
             />
-            
             <div className="flex justify-around mx-10">
-                <p className="font-medium text-gray-800 mb-1">{food.product_name}</p>
-            <div className="flex justify-center items-center text-yellow-500 mb-1">
-              {Array.from({ length: 1 }).map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-yellow-400" />
-              ))}
-              <span className="text-sm text-gray-700 ml-1">4.5</span>
+              <p className="font-medium text-gray-800 mb-1">{food.product_name}</p>
+              <div className="flex justify-center items-center text-yellow-500 mb-1">
+                {Array.from({ length: 1 }).map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400" />
+                ))}
+                <span className="text-sm text-gray-700 ml-1">4.5</span>
+              </div>
             </div>
-            </div>
-
             <p className="text-sm font-light truncate mx-16">{food.description}</p>
-        
             <div className="flex justify-around mx-20 mt-2">
-                <div className="text-sm text-gray-700 space-x-2 mb-1">
-              {food.display_price > food.selling_price && (
-                <span className="line-through text-gray-500">₹{food.display_price}</span>
-              )}
-              <span className="font-semibold text-gray-900">₹{food.selling_price}</span>
+              <div className="text-sm text-gray-700 space-x-2 mb-1">
+                {food.display_price > food.selling_price && (
+                  <span className="line-through text-gray-500">₹{food.display_price}</span>
+                )}
+                <span className="font-semibold text-gray-900">₹{food.selling_price}</span>
+              </div>
+              <span className="text-xs text-gray-600 border px-2 py-0.5 border-gray-300 rounded">
+                {food.discount}
+              </span>
             </div>
-            <span className="text-xs text-gray-600 border px-2 py-0.5 border-gray-300 rounded">
-              {food.discount}
-            </span></div>
           </div>
         ))}
       </div>
