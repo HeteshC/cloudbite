@@ -11,22 +11,19 @@ const FoodDisplay = ({ category, filterType }) => {
   const [foodList, setFoodList] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext); // Access addToCart from CartContext
+  const { addToCart, removeFromCart, updateQuantity } = useContext(CartContext); // Access updateQuantity from CartContext
 
   useEffect(() => {
     const fetchFoodList = async () => {
       try {
         const url = `${backendGlobalRoute}/api/all-foods`; // Fetch all food items
         const response = await axios.get(url);
-        console.log("API Response:", response.data);
         if (response.data) {
           const filteredFoodList =
             filterType === "kitchen"
               ? response.data.filter((item) => item.kitchen?.name === category) // Filter by kitchen name
               : response.data.filter((item) => item.subcategory?._id === category); // Filter by subcategory ID
           setFoodList(filteredFoodList);
-        } else {
-          console.error("Failed to fetch data properly");
         }
       } catch (error) {
         console.error("Error fetching food list:", error.message);
@@ -42,14 +39,22 @@ const FoodDisplay = ({ category, filterType }) => {
     fetchFoodList();
   }, [category, filterType]); // Refetch foods when category or filterType changes
 
-  const handleAddToCart = (foodItem) => {
-    if (foodItem.availability_status) {
-      addToCart(foodItem); // Use addToCart from CartContext
-      toast.success(`${foodItem.product_name} added to cart!`);
-      navigate(`/food/${foodItem._id}`); // Navigate to SingleFood page
+  const handleAddToCart = async (foodItem) => {
+    if (foodItem && foodItem._id) {
+      try {
+        await addToCart(foodItem); // Pass the entire foodItem object
+      } catch (error) {
+        console.error("Error adding to cart:", error);
+        toast.error("Failed to add item to cart.", { autoClose: 1200 });
+      }
     } else {
-      toast.error("Cannot add. Product is Out of Stock!", { autoClose: 1200 });
+      console.error("Invalid food item:", foodItem);
+      toast.error("Invalid food item. Cannot add to cart.", { autoClose: 1200 });
     }
+  };
+
+  const handleNavigateToSingleFood = (id) => {
+    navigate(`/food/${id}`); // Navigate to the single food page with the product ID
   };
 
   return (
@@ -62,6 +67,7 @@ const FoodDisplay = ({ category, filterType }) => {
             <div
               key={item._id}
               style={{ cursor: "pointer" }} // Add pointer cursor for better UX
+              onClick={() => handleNavigateToSingleFood(item._id)} // Navigate on click
             >
               <FoodItem
                 id={item._id}
@@ -70,7 +76,9 @@ const FoodDisplay = ({ category, filterType }) => {
                 selling_price={item.selling_price} // Pass selling price
                 display_price={item.display_price} // Pass display price
                 image={`${backendGlobalRoute}/${item.product_image}`}
-                onAddToCart={() => handleAddToCart(item)} // Pass add-to-cart handler
+                onAddToCart={() => handleAddToCart(item)} // Pass the item to handleAddToCart
+                onRemoveFromCart={() => removeFromCart(item._id)} // Pass the item ID to removeFromCart
+                onUpdateQuantity={(id, quantity) => updateQuantity(id, quantity)} // Pass updateQuantity
               />
             </div>
           ))

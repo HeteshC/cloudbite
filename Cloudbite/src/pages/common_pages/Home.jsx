@@ -24,14 +24,14 @@ const Home = () => {
       </div>
 
 
-      <div className="container ml-28 my-5">
+      <div className=" ml-24 my-5">
         <img src={Offer} alt="Offer Image" />
       </div>
 
       <ExploreCategory />
 
 
-      <div className="container">*
+      <div className="container">
         <MostPopular />
         <JustArrived />
         <Blog />

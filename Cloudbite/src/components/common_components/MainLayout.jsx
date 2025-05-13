@@ -44,7 +44,7 @@ import ThankYou from "../../pages/orders_page/ThankYou";
 import Wishlist from "../../pages/wishlist_pages/Wishlist";
 
 // food detail page
-import SingleFood from "../SingleFoodPage/SingleFood";
+import SingleFood from "../../pages/food_pages/SingleFoodPage";
 
 
 import FoodDisplay from "../FoodDisplay/FoodDisplay";

@@ -6,22 +6,33 @@ exports.getCart = async (req, res) => {
     const cart = await Cart.findOne({ user: req.user.id }).populate(
       "items.product"
     );
-    if (!cart) return res.status(200).json({ items: [] });
 
-    const formattedItems = cart.items.map((item) => ({
-      _id: item.product._id,
-      product_name: item.product.product_name,
-      selling_price: item.product.selling_price,
-      display_price: item.product.display_price,
-      product_image: item.product.product_image,
-      availability_status: item.product.availability_status,
-      quantity: item.quantity,
-    }));
+    if (!cart) {
+      console.warn(`No cart found for user ID: ${req.user.id}`);
+      return res.status(200).json({ items: [] }); // Return empty cart if none exists
+    }
+
+    const formattedItems = cart.items.map((item) => {
+      if (!item.product) {
+        console.error(`Product not found for cart item: ${item}`);
+        return null; // Skip items with missing product references
+      }
+
+      return {
+        _id: item.product._id,
+        product_name: item.product.product_name,
+        selling_price: item.product.selling_price,
+        display_price: item.product.display_price,
+        product_image: item.product.product_image,
+        availability_status: item.product.availability_status,
+        quantity: item.quantity,
+      };
+    }).filter(Boolean); // Remove null items
 
     res.json({ items: formattedItems });
   } catch (error) {
     console.error("Error fetching cart:", error);
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -29,6 +40,15 @@ exports.getCart = async (req, res) => {
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({ message: "Product ID is required." });
+    }
+
+    if (quantity === undefined || quantity <= 0) {
+      return res.status(400).json({ message: "Quantity must be greater than 0." });
+    }
+
     let cart = await Cart.findOne({ user: req.user.id });
 
     if (!cart) {
@@ -40,16 +60,32 @@ exports.addToCart = async (req, res) => {
     );
 
     if (existingItem) {
-      existingItem.quantity += quantity || 1;
+      existingItem.quantity += quantity; // Increment quantity
     } else {
-      cart.items.push({ product: productId, quantity: quantity || 1 });
+      cart.items.push({ product: productId, quantity }); // Add new item
     }
 
     await cart.save();
-    res.status(200).json({ message: "Item added to cart." });
+
+    // Fetch the updated cart with populated product details
+    const updatedCart = await Cart.findOne({ user: req.user.id }).populate(
+      "items.product"
+    );
+
+    const formattedItems = updatedCart.items.map((item) => ({
+      _id: item.product._id,
+      product_name: item.product.product_name,
+      selling_price: item.product.selling_price,
+      display_price: item.product.display_price,
+      product_image: item.product.product_image,
+      availability_status: item.product.availability_status,
+      quantity: item.quantity,
+    }));
+
+    res.status(200).json({ message: "Item added to cart.", items: formattedItems });
   } catch (error) {
-    console.error("Error adding to cart:", error);
-    res.status(500).json({ message: "Server Error" });
+    console.error("Error in addToCart:", error);
+    res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
 
@@ -83,7 +119,9 @@ exports.removeCartItem = async (req, res) => {
     const { productId } = req.params;
 
     const cart = await Cart.findOne({ user: req.user.id });
-    if (!cart) return res.status(404).json({ message: "Cart not found" });
+    if (!cart) {
+      return res.status(404).json({ message: "Cart not found" });
+    }
 
     cart.items = cart.items.filter(
       (item) => item.product.toString() !== productId
