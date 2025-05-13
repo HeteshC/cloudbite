@@ -1,10 +1,11 @@
 const Cart = require("../models/CartModel");
+const Food = require("../models/FoodModel"); // Updated to reference Food model
 
 // Get Cart
 exports.getCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user.id }).populate(
-      "items.product"
+      "items.food"
     );
 
     if (!cart) {
@@ -12,22 +13,25 @@ exports.getCart = async (req, res) => {
       return res.status(200).json({ items: [] }); // Return empty cart if none exists
     }
 
-    const formattedItems = cart.items.map((item) => {
-      if (!item.product) {
-        console.error(`Product not found for cart item: ${item}`);
-        return null; // Skip items with missing product references
-      }
+    // Filter out items with null food references
+    const validItems = cart.items.filter((item) => item.food !== null);
 
-      return {
-        _id: item.product._id,
-        product_name: item.product.product_name,
-        selling_price: item.product.selling_price,
-        display_price: item.product.display_price,
-        product_image: item.product.product_image,
-        availability_status: item.product.availability_status,
-        quantity: item.quantity,
-      };
-    }).filter(Boolean); // Remove null items
+    // If there are invalid items, clean up the cart
+    if (validItems.length !== cart.items.length) {
+      cart.items = validItems;
+      await cart.save();
+      console.warn(`Cleaned up invalid cart items for user ID: ${req.user.id}`);
+    }
+
+    const formattedItems = validItems.map((item) => ({
+      _id: item.food._id,
+      product_name: item.food.product_name,
+      selling_price: item.food.selling_price,
+      display_price: item.food.display_price,
+      product_image: item.food.product_image,
+      availability_status: item.food.availability_status,
+      quantity: item.quantity,
+    }));
 
     res.json({ items: formattedItems });
   } catch (error) {
@@ -39,14 +43,23 @@ exports.getCart = async (req, res) => {
 // Add to Cart
 exports.addToCart = async (req, res) => {
   try {
-    const { productId, quantity } = req.body;
+    const { foodId, quantity } = req.body;
 
-    if (!productId) {
-      return res.status(400).json({ message: "Product ID is required." });
+    console.log("Received foodId:", foodId); // Log the foodId for debugging
+
+    if (!foodId) {
+      return res.status(400).json({ message: "Food ID is required." });
     }
 
     if (quantity === undefined || quantity <= 0) {
       return res.status(400).json({ message: "Quantity must be greater than 0." });
+    }
+
+    // Check if the food exists in the database
+    const food = await Food.findById(foodId);
+    if (!food) {
+      console.error("Food not found for foodId:", foodId); // Log the missing food
+      return res.status(404).json({ message: "Food not found." });
     }
 
     let cart = await Cart.findOne({ user: req.user.id });
@@ -56,35 +69,35 @@ exports.addToCart = async (req, res) => {
     }
 
     const existingItem = cart.items.find(
-      (item) => item.product.toString() === productId
+      (item) => item.food.toString() === foodId
     );
 
     if (existingItem) {
       existingItem.quantity += quantity; // Increment quantity
     } else {
-      cart.items.push({ product: productId, quantity }); // Add new item
+      cart.items.push({ food: foodId, quantity }); // Add new item
     }
 
     await cart.save();
 
-    // Fetch the updated cart with populated product details
+    // Fetch the updated cart with populated food details
     const updatedCart = await Cart.findOne({ user: req.user.id }).populate(
-      "items.product"
+      "items.food"
     );
 
     const formattedItems = updatedCart.items.map((item) => ({
-      _id: item.product._id,
-      product_name: item.product.product_name,
-      selling_price: item.product.selling_price,
-      display_price: item.product.display_price,
-      product_image: item.product.product_image,
-      availability_status: item.product.availability_status,
+      _id: item.food._id,
+      product_name: item.food.product_name,
+      selling_price: item.food.selling_price,
+      display_price: item.food.display_price,
+      product_image: item.food.product_image,
+      availability_status: item.food.availability_status,
       quantity: item.quantity,
     }));
 
     res.status(200).json({ message: "Item added to cart.", items: formattedItems });
   } catch (error) {
-    console.error("Error in addToCart:", error);
+    console.error("Error in addToCart:", error); // Log the error for debugging
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
@@ -92,16 +105,16 @@ exports.addToCart = async (req, res) => {
 // Update Cart Item Quantity
 exports.updateCartItem = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { foodId } = req.params;
     const { quantity } = req.body;
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const item = cart.items.find(
-      (item) => item.product.toString() === productId
+      (item) => item.food.toString() === foodId
     );
-    if (!item) return res.status(404).json({ message: "Product not in cart" });
+    if (!item) return res.status(404).json({ message: "Food not in cart" });
 
     item.quantity = quantity;
 
@@ -116,7 +129,7 @@ exports.updateCartItem = async (req, res) => {
 // Remove Item from Cart
 exports.removeCartItem = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { foodId } = req.params;
 
     const cart = await Cart.findOne({ user: req.user.id });
     if (!cart) {
@@ -124,7 +137,7 @@ exports.removeCartItem = async (req, res) => {
     }
 
     cart.items = cart.items.filter(
-      (item) => item.product.toString() !== productId
+      (item) => item.food.toString() !== foodId
     );
 
     await cart.save();
@@ -157,7 +170,7 @@ exports.syncCart = async (req, res) => {
     }
 
     cart.items = items.map((item) => ({
-      product: item._id,
+      food: item._id,
       quantity: item.quantity,
     }));
 

@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 
 const cartItemSchema = new mongoose.Schema({
-  product: {
+  food: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Product", // Link to Product collection
+    ref: "Food", // Link to Food collection
     required: true,
   },
   quantity: {

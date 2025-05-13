@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { Star, Heart } from "lucide-react"; // Import Heart icon
+import React, { useState, useEffect, useContext } from "react";
+import { Star, Heart } from "lucide-react";
 import axios from "axios";
 import globalBackendRoute from "../../config/config";
 import { useNavigate } from "react-router-dom";
+import { CartContext } from "../cart_components/CartContext"; // Import CartContext
 
 const BestSellingProducts = () => {
   const [bestSellers, setBestSellers] = useState([]);
-  const [quantities, setQuantities] = useState({}); // Track quantities for each product
   const navigate = useNavigate();
+  const { addToCart, removeFromCart, cartItems } = useContext(CartContext); // Use CartContext
 
   useEffect(() => {
     const fetchBestSellers = async () => {
@@ -26,27 +27,24 @@ const BestSellingProducts = () => {
     fetchBestSellers();
   }, []);
 
-  const handleNavigateToSingleFood = (id) => {
-    navigate(`/food/${id}`);
+  const handleNavigateToSingleFood = (slug) => {
+    navigate(`/food/${slug}`); // Navigate using the slug
   };
 
-  const handleAddToCart = (id) => {
-    setQuantities((prev) => ({
-      ...prev,
-      [id]: (prev[id] || 0) + 1,
-    }));
+  const getQuantity = (id) => {
+    const item = cartItems.find((item) => item._id === id);
+    return item ? item.quantity : 0;
   };
 
-  const handleRemoveFromCart = (id) => {
-    setQuantities((prev) => {
-      if (prev[id] > 1) {
-        return { ...prev, [id]: prev[id] - 1 };
-      } else {
-        const updated = { ...prev };
-        delete updated[id];
-        return updated;
-      }
-    });
+  const handleRemoveFromCart = (productId) => {
+    const item = cartItems.find((item) => item._id === productId);
+    if (item && item.quantity > 1) {
+      // Decrement quantity if more than 1
+      removeFromCart(productId, item.quantity - 1);
+    } else {
+      // Remove item completely if quantity is 1
+      removeFromCart(productId);
+    }
   };
 
   return (
@@ -61,55 +59,85 @@ const BestSellingProducts = () => {
         {bestSellers.map((food, index) => (
           <div
             key={index}
-            className="relative text-center cursor-pointer group"
-            onClick={() => handleNavigateToSingleFood(food._id)}
+            className="bg-white shadow-md rounded-lg flex flex-col h-full relative"
           >
-            <img
-              src={`${globalBackendRoute}/${food.product_image}`}
-              alt={food.food_name}
-              className="mx-auto h-40 object-contain mb-3"
-            />
-            <div className="flex justify-around mx-10">
-              <p className="font-medium text-gray-800 mb-1">{food.product_name}</p>
-              <div className="flex justify-center items-center text-yellow-500 mb-1">
-                {Array.from({ length: 1 }).map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-400" />
-                ))}
-                <span className="text-sm text-gray-700 ml-1">4.5</span>
-              </div>
-            </div>
-            <p className="text-sm font-light truncate mx-16">{food.description}</p>
-            <div className="flex justify-around mx-20 mt-2">
-              <div className="text-sm text-gray-700 space-x-2 mb-1">
-                {food.display_price > food.selling_price && (
-                  <span className="line-through text-gray-500">₹{food.display_price}</span>
-                )}
-                <span className="font-semibold text-gray-900">₹{food.selling_price}</span>
-              </div>
-              <span className="text-xs text-gray-600 border px-2 py-0.5 border-gray-300 rounded">
-                {food.discount}
-              </span>
+            {/* Heart Icon at the Top-Right */}
+            <div className="absolute top-4 right-4">
+              <button
+                className="bg-gray-200 text-gray-800 p-2 rounded-full hover:bg-gray-300"
+                onClick={(e) => e.stopPropagation()} // Prevent triggering navigation
+              >
+                <Heart className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Hover Actions */}
-            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
-              {quantities[food._id] ? (
-                <div className="flex items-center gap-2">
+            {/* Image Section */}
+            <div
+              className="h-1/2 w-full cursor-pointer"
+              onClick={() => handleNavigateToSingleFood(food.slug)} // Use slug for navigation
+            >
+              <img
+                src={`${globalBackendRoute}/${food.product_image}`}
+                alt={food.food_name}
+                className="h-full w-full object-cover rounded-t-lg"
+              />
+            </div>
+
+            {/* Details Section */}
+            <div className="flex flex-col justify-between flex-grow p-4">
+              <div>
+                <div className="flex justify-around">
+                  <p className="font-semibold text-gray-800 text-lg mb-2">
+                    {food.product_name}
+                  </p>
+                  <div className="flex justify-center items-center text-yellow-500 mb-3">
+                    {Array.from({ length: 1 }).map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-yellow-400" />
+                    ))}
+                    <span className="text-sm text-gray-700 ml-1">4.5</span>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-600 truncate mb-2 text-center">
+                  {food.description}
+                </p>
+                <div className="flex justify-center gap-3 items-center ">
+                  <div className="text-sm text-gray-700 space-x-2">
+                    {food.display_price > food.selling_price && (
+                      <span className="line-through text-gray-500">
+                        ₹{food.display_price}
+                      </span>
+                    )}
+                    <span className="font-semibold text-gray-900">
+                      ₹{food.selling_price}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-600 border px-2 py-0.5 border-gray-300 rounded">
+                    {food.discount || "0% OFF"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Add to Cart Section */}
+              {getQuantity(food._id) > 0 ? (
+                <div className="flex justify-between items-center w-full">
                   <button
                     className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
                     onClick={(e) => {
-                      e.stopPropagation();
+                      e.stopPropagation(); // Prevent triggering navigation
                       handleRemoveFromCart(food._id);
                     }}
                   >
                     -
                   </button>
-                  <span className="text-white font-semibold">{quantities[food._id]}</span>
+                  <span className="text-gray-800 font-semibold">
+                    {getQuantity(food._id)}
+                  </span>
                   <button
                     className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
                     onClick={(e) => {
-                      e.stopPropagation();
-                      handleAddToCart(food._id);
+                      e.stopPropagation(); // Prevent triggering navigation
+                      addToCart(food);
                     }}
                   >
                     +
@@ -117,21 +145,15 @@ const BestSellingProducts = () => {
                 </div>
               ) : (
                 <button
-                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm"
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm w-full"
                   onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddToCart(food._id);
+                    e.stopPropagation(); // Prevent triggering navigation
+                    addToCart(food);
                   }}
                 >
                   Add to Cart
                 </button>
               )}
-              <button
-                className="bg-gray-200 text-gray-800 p-2 rounded-full hover:bg-gray-300"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Heart className="w-5 h-5" />
-              </button>
             </div>
           </div>
         ))}

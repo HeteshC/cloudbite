@@ -19,17 +19,15 @@ const SubCategoryExplore = () => {
           (category) => category.category_name === "VEG"
         );
 
-        console.log("VEG Category:", vegCategory); // Log the VEG category values
 
         if (vegCategory) {
           const subcategoryResponse = await axios.get(`${globalBackendRoute}/api/all-subcategories`);
-          console.log("Raw Subcategories:", subcategoryResponse.data); // Log raw subcategory data
 
           const vegSubcategories = subcategoryResponse.data.filter(
             (subcategory) => String(subcategory.category._id) === String(vegCategory._id) // Compare category._id
           );
 
-          console.log("Filtered Subcategories:", vegSubcategories); // Log the filtered subcategories
+
           setSubcategories(vegSubcategories);
         }
       } catch (error) {

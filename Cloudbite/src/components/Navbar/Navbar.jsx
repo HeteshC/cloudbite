@@ -18,7 +18,7 @@ const Navbar = ({ setShowLogin }) => {
   return (
     <div className="navbar px-4 py-2">
       {/* Wrap the logo with a Link to redirect to the home page */}
-      <Link to="/">
+      <Link to="/home">
         <img src={assets.logo} alt="logo" className="logo" />
       </Link>
       <Link to="/menu" className="text-red-950 hover:text-red-950 font-semibold">

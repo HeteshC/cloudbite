@@ -8,6 +8,7 @@ const {
   updateFoodById,
   deleteFoodById,
   searchFoods,
+  getFoodBySlug, // Import the new controller function
 } = require("../controllers/FoodController");
 
 // Routes
@@ -18,6 +19,7 @@ router.post(
 );
 router.get("/all-foods", getAllFoods); // Ensure this route is correctly mapped
 router.get("/get-food-by-id/:id", getFoodById);
+router.get("/get-food-by-slug/:slug", getFoodBySlug); // Add route to fetch food by slug
 router.put(
   "/update-food/:id",
   foodUpload.fields([

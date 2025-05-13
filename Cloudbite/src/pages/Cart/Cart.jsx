@@ -26,9 +26,9 @@ const CartPage = () => {
   };
 
   return (
-    <div className="cart">
+    <div className="cart px-10"> {/* Added padding on both sides */}
       <div className="cart-items">
-        <div className="cart-items-title">
+        <div className="cart-items-title ">
           <p>Items</p>
           <p>Title</p>
           <p>Price</p>
