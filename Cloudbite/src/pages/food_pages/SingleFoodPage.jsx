@@ -95,7 +95,9 @@ const SingleFoodPage = () => {
         {/* Right: Food Info */}
         <div className="flex-1 space-y-6">
           <div>
-            <p className="text-sm text-gray-400 uppercase">New Arrival</p>
+            <p className="text-sm text-gray-400 uppercase">
+              {food.kitchen?.name || "Kitchen"}
+            </p>
             <h2 className="text-3xl font-semibold text-gray-900">{food.product_name}</h2>
             <p className="text-xl text-gray-500 mt-1">
               {food.category?.category_name || "Category not available"}
