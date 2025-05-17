@@ -155,8 +155,16 @@ const updateUser = async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Only update email if it's different and not already taken by another user
+    if (email && email !== user.email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+        return res.status(400).json({ message: "Email already in use by another account." });
+      }
+      user.email = email;
+    }
+
     if (name) user.name = name;
-    if (email) user.email = email;
     if (phone) user.phone = phone;
     if (address) user.address = { ...user.address, ...JSON.parse(address) };
     if (companyName) user.companyName = companyName;
@@ -185,7 +193,7 @@ const updateUser = async (req, res) => {
     res.status(200).json(user);
   } catch (error) {
     console.error("Error updating user:", error.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 

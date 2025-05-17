@@ -282,7 +282,6 @@ export const CartProvider = ({ children }) => {
       }
       setCartItems([]);
       localStorage.removeItem("guest_cart");
-      toast.success("Cart cleared!");
     } catch (error) {
       console.error("Failed to clear cart!", error.message);
       toast.error("Failed to clear cart!");
