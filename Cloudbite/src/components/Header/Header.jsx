@@ -6,7 +6,7 @@ const Header = () => {
   const navigate = useNavigate();
 
   const handleExploreClick = () => {
-    navigate('/cloud-kitchens');  // Corrected route path
+    navigate('/menu');  // Corrected route path
   };
 
   return (
@@ -17,7 +17,7 @@ const Header = () => {
           Explore a variety of mouthwatering dishes prepared in top-tier cloud kitchens,
           ensuring fresh, flavorful, and hygienic meals delivered right to your doorstep.
         </p>
-        <button onClick={handleExploreClick}>Explore Kitchens</button>
+        <button onClick={handleExploreClick}>Explore Our Menu</button>
       </div>
     </div>
   );

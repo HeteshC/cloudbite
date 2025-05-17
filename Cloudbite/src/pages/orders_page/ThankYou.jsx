@@ -5,7 +5,7 @@ import { FaCheckCircle } from "react-icons/fa";
 const ThankYou = () => {
   return (
     <div className="containerWidth flex flex-col items-center justify-center min-h-[80vh] text-center animate-fadeIn">
-      <FaCheckCircle className="text-green-500 text-7xl mb-6" />
+      <FaCheckCircle className="text-orange-700 text-7xl mb-6" />
       <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
         Thank You for Your Order!
       </h1>
@@ -14,7 +14,7 @@ const ThankYou = () => {
       </p>
       <Link
         to="/"
-        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-full font-bold hover:opacity-90 transition"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-800 to-red-700 text-white rounded-full font-bold hover:opacity-90 transition"
       >
         Continue Shopping
       </Link>

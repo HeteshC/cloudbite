@@ -158,7 +158,7 @@ import React, { useState, useContext } from "react";
 import axios from "axios";
 import { FaSignInAlt, FaEye, FaEyeSlash } from "react-icons/fa";
 import { AuthContext } from "../../components/auth_components/AuthManager";
-import globalBackendRoute from "../../config/Config";
+import globalBackendRoute from "../../config/config";
 
 const Login = () => {
   const { login } = useContext(AuthContext);
@@ -222,7 +222,7 @@ const Login = () => {
       <div className="bg-white w-full max-w-md p-8 space-y-6">
         {/* Header */}
         <div className="text-center">
-          <FaSignInAlt className="mx-auto text-orange-500" size={48} />
+          <FaSignInAlt className="mx-auto text-orange-800" size={48} />
           <h2 className="text-2xl font-extrabold text-gray-800 mt-3">
             Sign in
           </h2>
@@ -230,7 +230,7 @@ const Login = () => {
 
         {/* Error */}
         {error && (
-          <p className="text-center text-red-600 font-semibold">{error}</p>
+          <p className="text-center text-red-900 font-semibold">{error}</p>
         )}
 
         {/* Form */}
@@ -251,7 +251,7 @@ const Login = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-400 focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-700 focus:outline-none"
               placeholder="Enter your email"
             />
           </div>
@@ -267,7 +267,7 @@ const Login = () => {
               </label>
               <a
                 href="/forgot-password"
-                className="text-sm font-semibold text-orange-500 hover:underline"
+                className="text-sm font-semibold text-orange-800 hover:underline"
               >
                 Forgot password?
               </a>
@@ -280,12 +280,12 @@ const Login = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-400 focus:outline-none pr-10"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-800 focus:outline-none pr-10"
               placeholder="Enter your password"
             />
             <span
               onClick={togglePasswordVisibility}
-              className="absolute right-3 top-9 text-gray-500 hover:text-orange-600 cursor-pointer"
+              className="absolute right-3 top-9 text-gray-500 hover:text-orange-800 cursor-pointer"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
@@ -294,7 +294,7 @@ const Login = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-full shadow hover:from-red-700 hover:to-orange-600 transition"
+            className="w-full py-2 px-4 bg-gradient-to-r from-red-800 to-orange-700 text-white font-bold rounded-full shadow hover:from-red-900 hover:to-orange-800 transition"
           >
             Login
           </button>
@@ -305,7 +305,7 @@ const Login = () => {
           Don’t have an account?{" "}
           <a
             href="/register"
-            className="text-orange-500 font-semibold hover:underline"
+            className="text-orange-800 font-semibold hover:underline"
           >
             Register here
           </a>

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FaUserPlus, FaEye, FaEyeSlash } from "react-icons/fa";
-import globalBackendRoute from "../../config/Config";
+import globalBackendRoute from "../../config/config";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -67,7 +67,7 @@ const Register = () => {
       <div className="bg-white w-full max-w-md p-8 space-y-6">
         {/* Header */}
         <div className="text-center">
-          <FaUserPlus className="mx-auto text-orange-500" size={48} />
+          <FaUserPlus className="mx-auto text-orange-800" size={48} />
           <h2 className="text-2xl font-extrabold text-gray-800 mt-3">
             Register
           </h2>
@@ -75,7 +75,7 @@ const Register = () => {
 
         {/* Error */}
         {error && (
-          <p className="text-center text-red-600 font-semibold">{error}</p>
+          <p className="text-center text-red-800 font-semibold">{error}</p>
         )}
 
         {/* Form */}
@@ -96,7 +96,7 @@ const Register = () => {
               value={formData.name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-400 focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-700 focus:outline-none"
               placeholder="Enter your name"
             />
           </div>
@@ -117,7 +117,7 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-400 focus:outline-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-800 focus:outline-none"
               placeholder="Enter your email"
             />
           </div>
@@ -138,12 +138,12 @@ const Register = () => {
               value={formData.password}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-400 focus:outline-none pr-10"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-orange-800 focus:outline-none pr-10"
               placeholder="Enter your password"
             />
             <span
               onClick={togglePasswordVisibility}
-              className="absolute right-3 top-9 text-gray-500 hover:text-orange-600 cursor-pointer"
+              className="absolute right-3 top-9 text-gray-500 hover:text-orange-800 cursor-pointer"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </span>
@@ -152,7 +152,7 @@ const Register = () => {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-2 px-4 bg-gradient-to-r from-red-600 to-orange-500 text-white font-bold rounded-full shadow hover:from-red-700 hover:to-orange-600 transition"
+            className="w-full py-2 px-4 bg-gradient-to-r from-red-800 to-orange-700 text-white font-bold rounded-full shadow hover:from-red-900 hover:to-orange-800 transition"
           >
             Register
           </button>
@@ -163,7 +163,7 @@ const Register = () => {
           Already have an account?{" "}
           <a
             href="/login"
-            className="text-orange-500 font-semibold hover:underline"
+            className="text-orange-800 font-semibold hover:underline"
           >
             Sign in
           </a>

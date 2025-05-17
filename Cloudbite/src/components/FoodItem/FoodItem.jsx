@@ -91,7 +91,7 @@ const FoodItem = ({
         {/* Add to Cart Section */}
         {quantity === 0 ? (
           <button
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 text-sm w-full"
+            className="bg-orange-800 text-white px-4 py-2 rounded hover:bg-orange-900 text-sm w-full"
             onClick={handleAdd}
           >
             Add to Cart
@@ -99,14 +99,14 @@ const FoodItem = ({
         ) : (
           <div className="flex justify-between items-center w-full">
             <button
-              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-sm"
+              className="bg-orange-800 text-white px-3 py-1 rounded hover:bg-orange-900 text-sm"
               onClick={handleRemove}
             >
               -
             </button>
             <span className="text-gray-800 font-semibold">{quantity}</span>
             <button
-              className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-sm"
+              className="bg-orange-800 text-white px-3 py-1 rounded hover:bg-orange-900 text-sm"
               onClick={handleAdd}
             >
               +

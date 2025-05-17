@@ -206,7 +206,7 @@ export const food_list = [
         category: "RebelFoods"
     }, {
         _id: "7",
-        name: "Chicken Rolls",
+        name: "  Rolls",
         image: food_7,
         price: 20,
         description: "Food provides essential nutrients for overall health and well-being",
