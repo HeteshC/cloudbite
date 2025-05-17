@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import "../../styles/Cart.css";
 import { CartContext } from "../../components/cart_components/CartContext";
+import { AuthContext } from "../../components/auth_components/AuthManager";
 import { FaTrash } from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import globalBackendRoute from "../../config/config";
@@ -9,6 +10,7 @@ const CartPage = () => {
   const navigate = useNavigate();
   const { cartItems, updateQuantity, removeFromCart, cartLoading } =
     useContext(CartContext);
+  const { isLoggedIn } = useContext(AuthContext); // Get login status
 
   const getImageUrl = (img) => {
     if (img) {
@@ -23,6 +25,17 @@ const CartPage = () => {
       (total, item) => total + item.selling_price * item.quantity,
       0
     );
+  };
+
+  const handleCheckout = () => {
+    if (!isLoggedIn) {
+      alert("Please login first to proceed to checkout.");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+      return;
+    }
+    navigate("/place-order");
   };
 
   return (
@@ -85,7 +98,7 @@ const CartPage = () => {
               <b>₹{getTotalCartAmount() + 30}</b>
             </div>
           </div>
-          <button onClick={() => navigate("/place-order")}>
+          <button onClick={handleCheckout}>
             PROCEED TO CHECKOUT
           </button>
         </div>

@@ -1,49 +1,120 @@
 const mongoose = require("mongoose");
 
-const orderItemSchema = new mongoose.Schema({
-  product_name: { type: String, required: true },
-  selling_price: { type: Number, required: true },
-  quantity: { type: Number, required: true },
-  product_image: { type: String }, // optional
+const orderSchema = new mongoose.Schema({
+  // Reference to the user who made the order
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+
+  // User email
+  email: {
+    type: String,
+    required: true,
+  },
+
+  // Array of foods ordered (with food image and quantity)
+  foods: [
+    {
+      food: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Food",
+      },
+      food_image: { type: String },
+      quantity: { type: Number, default: 1 },
+    },
+  ],
+
+  // Optional: Vendor reference (if enabled for foods)
+  vendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Vendor",
+    required: false,
+  },
+
+  // Optional: Outlet reference (if enabled for foods)
+  outlet: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Outlet",
+    required: false,
+  },
+
+  // Booking date and time
+  bookingDate: {
+    type: Date,
+    required: true,
+    default: Date.now,
+  },
+
+  // Status of the food order
+  status: {
+    type: String,
+    enum: [
+      "pending",
+      "confirmed",
+      "preparing",
+      "out_for_delivery",
+      "delivered",
+      "cancelled",
+      "returned",
+    ],
+    default: "pending",
+  },
+
+  // Payment status
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "paid", "failed", "refunded"],
+    default: "pending",
+  },
+
+  // Additional notes or instructions
+  notes: {
+    type: String,
+  },
+
+  // Timestamps for creation and update
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+
+  // Payment method
+  paymentMethod: {
+    type: String,
+    enum: ["cod", "card"],
+    required: true,
+  },
+
+  // Card payment details (only if paymentMethod is "card")
+  cardDetails: {
+    cardNumber: { type: String },
+    cardName: { type: String },
+    cardExpiry: { type: String }, // MM/YYYY or MM/YY
+    cardCVV: { type: String },
+  },
+
+  // User address details
+  address: {
+    addressLine1: { type: String },
+    street: { type: String },
+    city: { type: String },
+    state: { type: String },
+    pinCode: { type: String },
+    country: { type: String },
+    phone: { type: String },
+  },
 });
 
-const orderSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null, // for guest checkout
-    },
-    billingAddress: {
-      type: Object,
-      required: true,
-    },
-    shippingAddress: {
-      type: Object,
-      required: true,
-    },
-    items: [orderItemSchema],
-    totalAmount: {
-      type: Number,
-      required: true,
-    },
-    paymentStatus: {
-      type: String,
-      enum: ["Pending", "Paid", "Failed"],
-      default: "Pending",
-    },
-    orderStatus: {
-      type: String,
-      enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
-      default: "Processing",
-    },
-
-    // 🆕 Guest Info Fields
-    guestName: { type: String }, // Optional
-    guestEmail: { type: String },
-    guestPhone: { type: String },
-  },
-  { timestamps: true }
-);
+// Update updatedAt on save
+orderSchema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
 
 module.exports = mongoose.model("Order", orderSchema);

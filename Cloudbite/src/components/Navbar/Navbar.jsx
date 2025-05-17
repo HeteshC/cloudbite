@@ -10,13 +10,15 @@ import { CartContext } from "../cart_components/CartContext"; // Import CartCont
 const Navbar = ({ setShowLogin }) => {
   const [isOpen, setIsOpen] = useState(false); // State for mobile menu
   const navigate = useNavigate(); // React Router navigation hook
-  const { isLoggedIn, logout } = useContext(AuthContext); // Access authentication state and logout function
-  const { cartItems } = useContext(CartContext); // Access cart items from CartContext
+  const { isLoggedIn, logout, user } = useContext(AuthContext); // Access authentication state, logout, and user
+  const { cartItems } = useContext(CartContext);
 
-  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0); // Calculate total cart items
+  const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   return (
-    <div className="navbar px-4 py-2">
+    <div className="navbar px-4 py-2 relative">
       {/* Wrap the logo with a Link to redirect to the home page */}
       <Link to="/home">
         <img src={assets.logo} alt="logo" className="logo" />
@@ -45,8 +47,8 @@ const Navbar = ({ setShowLogin }) => {
         {/* Cart Icon */}
         <div
           className="flex items-center relative"
-          onClick={() => navigate("/cart")} // Navigate to cart page on click
-          style={{ cursor: "pointer" }} // Add pointer cursor for better UX
+          onClick={() => navigate("/cart")}
+          style={{ cursor: "pointer" }}
         >
           <img src={cartIcon} alt="Cart" className="w-16 h-16 mr-2" />
           {cartItemCount > 0 && (
@@ -65,9 +67,37 @@ const Navbar = ({ setShowLogin }) => {
             </Link>
           </>
         ) : (
-          <button onClick={logout} className="text-red-950 text-lg hover:text-red-950 font-semibold">
-            Logout
-          </button>
+          <div
+            className="relative"
+            onMouseEnter={() => setShowUserMenu(true)}
+            onMouseLeave={() => setShowUserMenu(false)}
+          >
+            <span
+              className="text-[#6b3f1d] text-lg font-semibold px-4 py-2 rounded cursor-pointer  border-[#a97c50] transition"
+              style={{ minWidth: 100, display: "inline-block" }}
+            >
+              {user?.name || "User"}
+            </span>
+            {showUserMenu && (
+              <div
+                className="absolute right-0 w-40  border-[#a97c50] rounded-lg  z-50"
+                style={{ minWidth: 150 }}
+              >
+                <button
+                  className="block w-full mb-2 text-left px-4 py-2 text-[#6b3f1d] hover:bg-[#f9f6f6] font-medium"
+                  onClick={() => navigate("/dashboard")}
+                >
+                  Dashboard
+                </button>
+                <button
+                  className="block w-full text-left px-4 py-2 text-[#a97c50] hover:bg-[#f9f6f6] font-medium border-t border-[#e0cfc2]"
+                  onClick={logout}
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 

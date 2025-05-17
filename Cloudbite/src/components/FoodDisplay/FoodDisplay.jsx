@@ -53,8 +53,8 @@ const FoodDisplay = ({ category, filterType }) => {
     }
   };
 
-  const handleNavigateToSingleFood = (id) => {
-    navigate(`/food/${id}`); // Navigate to the single food page with the product ID
+  const handleNavigateToSingleFood = (slug) => {
+    navigate(`/food/${slug}`); // Navigate to the single food page with the product slug
   };
 
   return (
@@ -66,19 +66,19 @@ const FoodDisplay = ({ category, filterType }) => {
           foodList.map((item) => (
             <div
               key={item._id}
-              style={{ cursor: "pointer" }} // Add pointer cursor for better UX
-              onClick={() => handleNavigateToSingleFood(item._id)} // Navigate on click
+              style={{ cursor: "pointer" }}
+              onClick={() => handleNavigateToSingleFood(item.slug)} // Use slug instead of _id
             >
               <FoodItem
                 id={item._id}
                 name={item.product_name}
                 description={item.description}
-                selling_price={item.selling_price} // Pass selling price
-                display_price={item.display_price} // Pass display price
+                selling_price={item.selling_price}
+                display_price={item.display_price}
                 image={`${backendGlobalRoute}/${item.product_image}`}
-                onAddToCart={() => handleAddToCart(item)} // Pass the item to handleAddToCart
-                onRemoveFromCart={() => removeFromCart(item._id)} // Pass the item ID to removeFromCart
-                onUpdateQuantity={(id, quantity) => updateQuantity(id, quantity)} // Pass updateQuantity
+                onAddToCart={() => handleAddToCart(item)}
+                onRemoveFromCart={() => removeFromCart(item._id)}
+                onUpdateQuantity={(id, quantity) => updateQuantity(id, quantity)}
               />
             </div>
           ))

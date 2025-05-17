@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { Navigate } from "react-router-dom";
+import globalBackendRoute from "../../config/config"; // <-- Add this import
 
 // 🔐 Create Context
 export const AuthContext = createContext();
@@ -26,14 +27,29 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       const decoded = decodeToken(token);
       if (decoded) {
-        setUser(decoded);
-        setIsLoggedIn(true);
+        // Fetch user details from backend to get full user info (including email, phone, address, avatar)
+        fetch(`${globalBackendRoute}/api/getUserById/${decoded.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+          .then((res) => res.json())
+          .then((userData) => {
+            setUser(userData);
+            setIsLoggedIn(true);
+            setLoading(false);
+          })
+          .catch((err) => {
+            setUser(decoded);
+            setIsLoggedIn(true);
+            setLoading(false);
+          });
       }
     } else {
       setUser(null);
       setIsLoggedIn(false);
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (token) => {
@@ -41,27 +57,39 @@ export const AuthProvider = ({ children }) => {
     const decoded = decodeToken(token);
 
     if (decoded) {
-      setUser(decoded);
-      setIsLoggedIn(true);
-
+      // Fetch user details from backend to get full user info (including email, phone, address, avatar)
       try {
-        const localCart = JSON.parse(localStorage.getItem("cart")) || [];
+        const res = await fetch(`${globalBackendRoute}/api/getUserById/${decoded.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const userData = await res.json();
+        setUser(userData);
+        setIsLoggedIn(true);
 
-        if (localCart.length > 0) {
-          await fetch(`${globalBackendRoute}/api/cart/sync`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ items: localCart }),
-          });
+        try {
+          const localCart = JSON.parse(localStorage.getItem("cart")) || [];
 
-          // 🧹 After successful sync, REMOVE guest cart
-          localStorage.removeItem("cart"); // ✅ THIS LINE WAS MISSING!
+          if (localCart.length > 0) {
+            await fetch(`${globalBackendRoute}/api/cart/sync`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ items: localCart }),
+            });
+
+            // 🧹 After successful sync, REMOVE guest cart
+            localStorage.removeItem("cart"); // ✅ THIS LINE WAS MISSING!
+          }
+        } catch (error) {
+          console.error("Cart sync failed:", error);
         }
       } catch (error) {
-        console.error("Cart sync failed:", error);
+        setUser(decoded);
+        setIsLoggedIn(true);
       }
     }
   };
