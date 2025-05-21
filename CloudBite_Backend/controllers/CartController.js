@@ -25,6 +25,7 @@ exports.getCart = async (req, res) => {
 
     const formattedItems = validItems.map((item) => ({
       _id: item.food._id,
+      slug: item.food.slug, // Add slug for frontend navigation
       product_name: item.food.product_name,
       selling_price: item.food.selling_price,
       display_price: item.food.display_price,

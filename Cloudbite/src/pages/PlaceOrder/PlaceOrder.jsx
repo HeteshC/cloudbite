@@ -98,6 +98,8 @@ export default function CheckoutPage() {
         cardCVV: payment.cardCVV,
       };
 
+      const totalAmount = getSubtotal() + 30;
+
       await axios.post(
         `${globalBackendRoute}/api/order/add`,
         {
@@ -108,6 +110,7 @@ export default function CheckoutPage() {
           paymentMethod: "card",
           paymentStatus: "paid",
           cardDetails,
+          totalAmount, // Send totalAmount to backend
         },
         {
           headers: { Authorization: `Bearer ${token}` },

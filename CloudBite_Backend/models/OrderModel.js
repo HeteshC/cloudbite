@@ -101,19 +101,45 @@ const orderSchema = new mongoose.Schema({
 
   // User address details
   address: {
-    addressLine1: { type: String },
+    addressLine1: { type: String }, // This is not used in most places, but keep for compatibility
     street: { type: String },
     city: { type: String },
     state: { type: String },
-    pinCode: { type: String },
+    pinCode: { type: String }, // Should match frontend "pinCode"
     country: { type: String },
     phone: { type: String },
   },
+
+  // Total price for the order
+  totalAmount: { type: Number, default: 0 },
 });
 
-// Update updatedAt on save
-orderSchema.pre("save", function (next) {
+// Calculate totalAmount using populated food prices before saving
+orderSchema.pre("save", async function (next) {
   this.updatedAt = Date.now();
+  if (Array.isArray(this.foods) && this.foods.length > 0) {
+    let total = 0;
+    for (const item of this.foods) {
+      let price = 0;
+      // If food is populated (object), use its selling_price
+      if (
+        item.food &&
+        typeof item.food === "object" &&
+        item.food.selling_price
+      ) {
+        price = item.food.selling_price;
+      } else if (item.food) {
+        // If not populated, fetch from DB
+        const Food = mongoose.model("Food");
+        const foodDoc = await Food.findById(item.food).select("selling_price");
+        price = foodDoc ? foodDoc.selling_price : 0;
+      }
+      total += price * (item.quantity || 1);
+    }
+    this.totalAmount = total;
+  } else {
+    this.totalAmount = 0;
+  }
   next();
 });
 

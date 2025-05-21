@@ -93,6 +93,16 @@ const addOrder = async (req, res) => {
       };
     }
 
+    // Calculate totalAmount
+    let totalAmount = 0;
+    for (const foodObj of parsedFoods) {
+      if (foodObj.food) {
+        const foodDoc = await Food.findById(foodObj.food);
+        if (!foodDoc) return res.status(400).json({ message: `Invalid food: ${foodObj.food}` });
+        totalAmount += (foodDoc.selling_price || 0) * (foodObj.quantity || 1);
+      }
+    }
+
     const newOrder = new Order({
       user,
       email,
@@ -106,6 +116,7 @@ const addOrder = async (req, res) => {
       paymentStatus,
       cardDetails: cardDetailsObj,
       address: address || {}, // Save address object
+      totalAmount, // Set totalAmount
     });
 
     const savedOrder = await newOrder.save();
@@ -164,6 +175,20 @@ const updateOrder = async (req, res) => {
           updateFields.foods[idx].food_image = file.path;
         }
       });
+    }
+
+    // Recalculate totalAmount if foods are updated
+    if (updateFields.foods) {
+      let totalAmount = 0;
+      for (const foodObj of updateFields.foods) {
+        if (foodObj.food) {
+          const foodDoc = await Food.findById(foodObj.food);
+          if (foodDoc) {
+            totalAmount += (foodDoc.selling_price || 0) * (foodObj.quantity || 1);
+          }
+        }
+      }
+      updateFields.totalAmount = totalAmount;
     }
 
     updateFields.updatedAt = Date.now();
