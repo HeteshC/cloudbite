@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "../../components/auth_components/AuthManager";
 import {
   FaUserCircle,
@@ -15,6 +15,7 @@ import axios from "axios";
 import globalBackendRoute from "../../config/config";
 import { CartContext } from "../../components/cart_components/CartContext";
 import jsPDF from "jspdf";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfileDashboard() {
   const { user, login } = useContext(AuthContext);
@@ -39,6 +40,8 @@ export default function ProfileDashboard() {
   const [saving, setSaving] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [food, setFood] = useState([]); // Used for best-selling foods, not for cart navigation
+  const navigate = useNavigate();
 
   // Get current time and greeting
   const now = new Date();
@@ -157,6 +160,27 @@ export default function ProfileDashboard() {
     if (user?._id || user?.id) fetchOrders();
     else setOrdersLoading(false);
   }, [user]);
+
+  useEffect(() => {
+    const fetchFood = async () => {
+      try {
+        const response = await axios.get(`${globalBackendRoute}/api/all-foods`);
+        const foods = response.data || [];
+        const sortedFoods = foods
+          .filter((food) => food.availability_status)
+          .slice(0, 8);
+        setFood(sortedFoods);
+      } catch (error) {
+        console.error("Error fetching best-selling foods:", error.message);
+      }
+    };
+
+    fetchFood();
+  }, []);
+
+  const handleNavigateToSingleFood = (slugOrId) => {
+    navigate(`/food/${slugOrId}`);
+  };
 
   const handleDownloadReceipt = async (orderId) => {
     try {
@@ -448,10 +472,15 @@ export default function ProfileDashboard() {
               cartItems.map((item, idx) => (
                 <motion.div
                   key={item._id}
-                  className="flex items-center gap-3 bg-[#f9f6f6] rounded-lg p-2 shadow-sm hover:scale-[1.03] transition-transform"
+                  className="flex items-center gap-3 bg-[#f9f6f6] rounded-lg p-2 shadow-sm hover:scale-[1.03] transition-transform cursor-pointer"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.05 }}
+                  onClick={() =>
+                    handleNavigateToSingleFood(
+                      item.slug ? item.slug : item._id
+                    )
+                  }
                 >
                   <img
                     src={

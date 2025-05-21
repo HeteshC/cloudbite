@@ -6,7 +6,8 @@ import { Heart, Minus, Plus, Star, ChevronLeft, ChevronRight } from "lucide-reac
 import { CartContext } from "../../components/cart_components/CartContext"; // Import CartContext
 
 const SingleFoodPage = () => {
-  const { id: slug } = useParams(); // Get the food slug from the URL
+  // Accept both slug and id from the URL
+  const { id } = useParams(); // id can be slug or ObjectId
   const navigate = useNavigate();
   const { addToCart, removeFromCart, cartItems } = useContext(CartContext); // Use CartContext
   const [food, setFood] = useState(null);
@@ -20,14 +21,21 @@ const SingleFoodPage = () => {
   useEffect(() => {
     const fetchFoodDetails = async () => {
       try {
-        const response = await axios.get(`${globalBackendRoute}/api/get-food-by-slug/${slug}`);
+        let response;
+        // Try fetching by slug first, fallback to id if not found
+        try {
+          response = await axios.get(`${globalBackendRoute}/api/get-food-by-slug/${id}`);
+        } catch (err) {
+          // If not found by slug, try by id
+          response = await axios.get(`${globalBackendRoute}/api/get-food-by-id/${id}`);
+        }
         setFood(response.data);
 
         // Fetch related foods
         const relatedResponse = await axios.get(
           `${globalBackendRoute}/api/all-foods?category=${response.data.category?._id}`
         );
-        setRelatedFoods(relatedResponse.data); // Fetch all related foods
+        setRelatedFoods(relatedResponse.data);
       } catch (error) {
         console.error("Error fetching food details:", error.message);
       } finally {
@@ -36,7 +44,7 @@ const SingleFoodPage = () => {
     };
 
     fetchFoodDetails();
-  }, [slug]);
+  }, [id]);
 
   const handleQuantityChange = (type) => {
     setQuantity((prev) => {

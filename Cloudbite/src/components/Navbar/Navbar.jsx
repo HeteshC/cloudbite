@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
 import { assets } from "../../assets/assets";
@@ -6,6 +6,8 @@ import { FaBars, FaTimes } from "react-icons/fa"; // Import icons for mobile men
 import cartIcon from "../../assets/cart_icon.png"; // Import the cart icon
 import { AuthContext } from "../auth_components/AuthManager"; // Import AuthContext
 import { CartContext } from "../cart_components/CartContext"; // Import CartContext
+import axios from "axios";
+import globalBackendRoute from "../../config/config";
 
 const Navbar = ({ setShowLogin }) => {
   const [isOpen, setIsOpen] = useState(false); // State for mobile menu
@@ -16,6 +18,64 @@ const Navbar = ({ setShowLogin }) => {
   const cartItemCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Search state
+  const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Fetch initial foods for dropdown
+  useEffect(() => {
+    const fetchInitialFoods = async () => {
+      try {
+        const res = await axios.get(`${globalBackendRoute}/api/all-foods`);
+        setSearchResults(res.data.slice(0, 5));
+      } catch {
+        setSearchResults([]);
+      }
+    };
+    fetchInitialFoods();
+  }, []);
+
+  // Search foods by name or kitchen
+  useEffect(() => {
+    if (!search) {
+      setShowDropdown(false);
+      return;
+    }
+    const fetchSearch = async () => {
+      try {
+        const res = await axios.get(`${globalBackendRoute}/api/all-foods`);
+        const foods = res.data || [];
+        const filtered = foods.filter(
+          (food) =>
+            (food.product_name &&
+              food.product_name.toLowerCase().includes(search.toLowerCase())) ||
+            (food.kitchen &&
+              ((typeof food.kitchen === "object" && food.kitchen.name && food.kitchen.name.toLowerCase().includes(search.toLowerCase())) ||
+                (typeof food.kitchen === "string" && food.kitchen.toLowerCase().includes(search.toLowerCase())))
+            )
+        );
+        setSearchResults(filtered.slice(0, 8));
+        setShowDropdown(true);
+      } catch {
+        setSearchResults([]);
+        setShowDropdown(false);
+      }
+    };
+    fetchSearch();
+  }, [search]);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setShowDropdown(!!e.target.value);
+  };
+
+  const handleResultClick = (food) => {
+    setShowDropdown(false);
+    setSearch("");
+    navigate(`/food/${food.slug || food._id}`);
+  };
 
   return (
     <div className="navbar px-4 py-2 relative">
@@ -34,12 +94,52 @@ const Navbar = ({ setShowLogin }) => {
       </Link>
 
       {/* Search Field (Always Visible) */}
-      <div className="hidden md:flex items-center border rounded-full p-2 px-4 bg-gray-100">
+      <div className="hidden md:flex items-center border rounded-full p-2 px-4 bg-gray-100 relative">
         <input
           type="search"
           className="bg-transparent focus:outline-none text-gray-700 placeholder-gray-500 w-40 md:w-60 lg:w-80"
-          placeholder="Search..."
+          placeholder="Search food or kitchen..."
+          value={search}
+          onChange={handleSearchChange}
+          onFocus={() => setShowDropdown(true)}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
         />
+        {showDropdown && (
+          <div className="absolute left-0 top-12 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-72 overflow-y-auto">
+            {searchResults.length === 0 ? (
+              <div className="p-3 text-gray-500 text-sm">No results found.</div>
+            ) : (
+              searchResults.map((food) => (
+                <div
+                  key={food._id}
+                  className="flex items-center gap-3 px-4 py-2 hover:bg-[#f9f6f6] cursor-pointer"
+                  onClick={() => handleResultClick(food)}
+                >
+                  <img
+                    src={
+                      food.product_image
+                        ? `${globalBackendRoute}/${food.product_image}`
+                        : "https://via.placeholder.com/40"
+                    }
+                    alt={food.product_name}
+                    className="w-8 h-8 rounded object-cover border border-[#e0cfc2]"
+                  />
+                  <div className="flex-1">
+                    <span className="font-medium text-[#6b3f1d]">{food.product_name}</span>
+                    <span className="ml-2 text-xs text-gray-500">
+                      {food.kitchen && typeof food.kitchen === "object" && food.kitchen.name
+                        ? food.kitchen.name
+                        : typeof food.kitchen === "string"
+                        ? food.kitchen
+                        : ""}
+                    </span>
+                  </div>
+                  <span className="text-xs text-[#a97c50] font-semibold">₹{food.selling_price}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Login / Register (Desktop) */}
@@ -109,7 +209,53 @@ const Navbar = ({ setShowLogin }) => {
       {/* Mobile Dropdown Menu */}
       {isOpen && (
         <div className="md:hidden bg-white shadow-lg p-5 space-y-4 absolute top-16 right-0 w-full">
-          <input type="search" className="w-full p-2 border rounded-md" placeholder="Search..." />
+          <div className="relative">
+            <input
+              type="search"
+              className="w-full p-2 border rounded-md"
+              placeholder="Search food or kitchen..."
+              value={search}
+              onChange={handleSearchChange}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            />
+            {showDropdown && (
+              <div className="absolute left-0 top-12 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-72 overflow-y-auto">
+                {searchResults.length === 0 ? (
+                  <div className="p-3 text-gray-500 text-sm">No results found.</div>
+                ) : (
+                  searchResults.map((food) => (
+                    <div
+                      key={food._id}
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-[#f9f6f6] cursor-pointer"
+                      onClick={() => handleResultClick(food)}
+                    >
+                      <img
+                        src={
+                          food.product_image
+                            ? `${globalBackendRoute}/${food.product_image}`
+                            : "https://via.placeholder.com/40"
+                        }
+                        alt={food.product_name}
+                        className="w-8 h-8 rounded object-cover border border-[#e0cfc2]"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-[#6b3f1d]">{food.product_name}</span>
+                        <span className="ml-2 text-xs text-gray-500">
+                          {food.kitchen && typeof food.kitchen === "object" && food.kitchen.name
+                            ? food.kitchen.name
+                            : typeof food.kitchen === "string"
+                            ? food.kitchen
+                            : ""}
+                        </span>
+                      </div>
+                      <span className="text-xs text-[#a97c50] font-semibold">₹{food.selling_price}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           <nav className="flex flex-col space-y-4">
             <Link to="/cloud-kitchens" className="text-red-950 hover:text-red-950 font-semibold">
               Cloud Kitchens
